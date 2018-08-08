@@ -1,4 +1,3 @@
-
 # hexfrac.py
 # by Ronald L. Rivest
 # August 8, 2018
@@ -19,9 +18,10 @@ but which can be used elsewhere.
 
 These routines are passed a generator "prng"
 which is a pseudorandom number generator.
-Each next(prng) returns a fresh pseudo-random 
+Each next(prng) returns a fresh pseudo-random
 hex string of a fixed length.
 """
+
 
 def uniform(prng):
     """
@@ -42,7 +42,7 @@ def uniform_larger(x, prng):
     x = x.lower()       # just to be sure
 
     x = x+'0'
-    non_f_position = min([i for i in range(len(x)) if x[i]<'f'])
+    non_f_position = min([i for i in range(len(x)) if x[i] < 'f'])
 
     y = ''
     while y <= x:
@@ -50,8 +50,8 @@ def uniform_larger(x, prng):
         y = y + next(prng)
 
     return y
-        
-            
+
+
 def test():
     import hashlib
     counter = 0
@@ -63,16 +63,19 @@ def test():
             yield hashlib.sha256(str(counter).encode()).hexdigest()
 
     prng = sha256_prng()
+
+    print("Ten random 64-digit hex strings:")
     for i in range(10):
         # print(next(prng))
         x = uniform(prng)
         print(x)
 
+    print("100 invocations of 'uniform_larger':")
+    print(x)
     for i in range(100):
         x = uniform_larger(x, prng)
         print("-->", x)
 
-test()
 
-
-    
+if __name__ == '__main__':
+    test()

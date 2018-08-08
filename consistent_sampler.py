@@ -15,10 +15,11 @@ Very similar to implementation of same ideas by Neal McBurnett:
    https://gist.github.com/nealmcb/b297237c50421f2a75d5aee682cd656d
 Differences include:
    -- use of a random seed
-   -- use of high-precision numbers (mpmath package)
-   -- ticket numbers depend on generation number, and are independent
-      of ticket numbers computed for other objects ('consistent sampling')
-   -- range of ticket numbers is (-1, 0) and not (0, 1).
+   -- use of high-precision numbers based on arbtrary-precision
+      hexadecimal fractions between 0 and 1
+   -- ticket numbers depend on generation number, 
+      and are independent of ticket numbers computed for other 
+      objects ('consistent sampling')
 
 The intended use here is for election audits, but there is nothing
 specific in this code to elections.  For elections, the objects are
@@ -29,8 +30,8 @@ For a similar sampling method, see Stark's audit tools:
 
 The consistent sampling method associates a pseudorandom number (a
 "ticket number") with each object, then sampling objects in order of
-increasing ticket number.  The ticket numbers are real numbers from a
-bounded range (-1 to 0).
+increasing ticket number.  The ticket numbers are real numbers from 
+the real interval (0,1).
 
 If used for sampling with replacement, then once an object is picked
 it is given a new but larger ticket number, and replaced in the
@@ -56,26 +57,21 @@ sampling with replacement, then the object may receive ticket numbers
 for generations 2, 3, ... as needed.  For a given object, its ticket
 numbers will increase with the generation number.
 
-Ticket numbers are negative real numbers in the range (-1, 0).  We use
-this somewhat unusual range to accomplish two properties: selecting
-tickets in order of increasing ticket number (which is what the python
-module heapq provides, without an option to choose in the other
-order), and allowing for tiny ranges where the size of the range is
-represented in the exponent, not the mantissa, of the ticket number.
+Ticket numbers are real numbers in the range (0, 1).  
 
 Let TktNo(id, gen) denote the ticket number of the object with given
 id and generation, where id is an object id and gen a positive
 integer.  (The dependence upon the random seed is implicit here.)
 
 TktNo(id, gen) for gen=1 is a real number chosen uniformly in
-the interval (-1, 0).
+the interval (0, 1).
 
 TktNo(id, gen) for gen>1 is a real number chosen uniformly from
 the interval
-        (TktNo(id, gen-1), 0).
+        (TktNo(id, gen-1), 1).
 A ticket number for an object will be strictly larger than that
 object's previous generation ticket number, but will still be
-strictly less than 0.
+strictly less than 1.
 
 One nice feature of this approach is that it is parallelizable.  That
 is, you can work with separate object collections independently, and
@@ -133,11 +129,7 @@ first subcollection only.
 
 These ideas are not so new.  They are similar to Python's "decorate
 and sort" paradigm, for example.
-
-We use Python's "mpmath" so we may represent ticket numbers as
-arbitrary-precision real numbers.  This is helpful because when
-sampling with replacement the ticket numbers may become quite small if
-objects are sampled repeatedly.
+(GIVE MORE CITATIONS HERE.)
 
 The main (only) interface routine is the routine "sampler";
 the other routines are for internal use only.
@@ -147,21 +139,13 @@ the other routines are for internal use only.
 import collections
 import hashlib
 import heapq
-import mpmath
+
+import hexfrac
 
 
 # Global constants
 
-# Global constant defining precision of ticket numbers (16 decimal
-# digits). This value was chosen as it makes collisions very unlikely.
-# (Even so, collisions are handled in a deterministic way within the
-# heapq package, essentially resolving collisions in favor of having
-# the object with the lexicographically smaller id being chosen first.
-
-mpmath.mp.dps = 16
-
-MIN_TICKET_NUMBER = mpmath.mpf(-1.0)
-MAX_TICKET_NUMBER = mpmath.mpf(0.0)
+MIN_TICKET_NUMBER = ''
 
 
 # A Ticket is a record referring to one object.
@@ -193,7 +177,7 @@ def tktstr(ticket):
     significant digits of the ticket number.
     """
 
-    return (mpmath.nstr(ticket.ticket_number),
+    return ("{:7}".format(ticket.ticket_number),
             ticket.id,
             ticket.generation)
 
@@ -207,22 +191,35 @@ def sha256(hash_input):
                   .hexdigest()
 
 
-def sha256_uniform(hash_input, a, b, seed):
+def sha256_prng(seed):
     """
-    Return high-precision pseudorandom real in (a, b), depending
+    Generator for SHA256 in counter mode.
+    """
+
+    seed_hash = sha256(seed)
+    counter = 0
+    while True:
+        yield sha256(seed_hash+str(counter))
+        counter += 1
+
+
+def sha256_uniform(hash_input, x, seed):
+    """
+    Return high-precision pseudorandom real in (x, 1), depending
     on the given random seed and the hash_input.
-    Uses mpmath for high-precision representation of such reals.
     """
 
     hex_val = sha256(sha256(seed) + hash_input)
-    x = int(hex_val, 16) * mpmath.ldexp(1, -256)  # uniform(0,1)
-    return a + (b-a)*x
+    return hexfrac.uniform(sha256_prng(hex_val))
 
 
 def first_ticket(id, seed):
     "Return initial (generation 1) ticket for the given id."
 
-    return next_ticket(Ticket(MIN_TICKET_NUMBER, id, 0), seed)
+                           
+    seed_id = sha256(seed)+str(id)
+    prng = sha256_prng(seed_id)
+    return Ticket(hexfrac.uniform(prng), id, 1)
 
 
 def next_ticket(ticket, seed):
@@ -232,18 +229,15 @@ def next_ticket(ticket, seed):
 
     Returned ticket has a ticket number that is a random real in
     the interval:
-          (ticket.ticket_number, MAX_TICKET_NUMBER)
+          (ticket.ticket_number, 1)
 
     The generation of the returned ticket is one larger than the
     generation of the input ticket.  The id is the same.
     """
 
     old_ticket_number, id, generation = ticket
-    hash_input = sha256(sha256(str(id))+str(generation))
-    new_ticket_number = sha256_uniform(hash_input,
-                                       old_ticket_number,
-                                       MAX_TICKET_NUMBER,
-                                       seed)
+    prng = sha256_prng(sha256(str(id))+str(generation))
+    new_ticket_number = hexfrac.uniform_larger(old_ticket_number, prng)
     return Ticket(new_ticket_number, id, generation+1)
 
 
@@ -290,10 +284,11 @@ def sampler(id_list,
                              Otherwise, each output element is a triple
                              (ticket) of the form:
                                  (ticket_number, id, generation)
-                             where ticket_number is a real number, id is an
-                             id from id_list, and generation is the number
-                             of times this id has been sampled so far
-                             (including the current sample).
+                             where 
+                                ticket_number is a real number (as a hex string),
+                                id is an id from id_list, and 
+                                generation is the number of times this id has 
+                                    been sampled so far (including the current sample).
         drop              -- an integer saying how many of the output
                              sequence to drop
                              (defaults to 0)
