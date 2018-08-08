@@ -17,9 +17,9 @@ These routines are intended for use with the routine
 which is intended for use in election audits,
 but which can be used elsewhere.
 
-These routines may be passed a function prng()
+These routines are passed a generator "prng"
 which is a pseudorandom number generator.
-Each call to prng() returns a fresh pseudo-random 
+Each next(prng) returns a fresh pseudo-random 
 hex string of a fixed length.
 """
 
@@ -68,7 +68,7 @@ def test():
         x = uniform(prng)
         print(x)
 
-    for i in range(10):
+    for i in range(100):
         x = uniform_larger(x, prng)
         print("-->", x)
 
