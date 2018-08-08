@@ -5,7 +5,7 @@
 
 """Routines to provide random samples from finite collections of
 objects, using sampling with replacement or sampling without
-replacement.  
+replacement.
 
 Method has consistency in relative sampling order when sampling a
 subset or superset of objects.  We thus call this sampling method
@@ -17,8 +17,8 @@ Differences include:
    -- use of a random seed
    -- use of high-precision numbers based on arbtrary-precision
       hexadecimal fractions between 0 and 1
-   -- ticket numbers depend on generation number, 
-      and are independent of ticket numbers computed for other 
+   -- ticket numbers depend on generation number,
+      and are independent of ticket numbers computed for other
       objects ('consistent sampling')
 
 The intended use here is for election audits, but there is nothing
@@ -30,7 +30,7 @@ For a similar sampling method, see Stark's audit tools:
 
 The consistent sampling method associates a pseudorandom number (a
 "ticket number") with each object, then sampling objects in order of
-increasing ticket number.  The ticket numbers are real numbers from 
+increasing ticket number.  The ticket numbers are real numbers from
 the real interval (0,1).
 
 If used for sampling with replacement, then once an object is picked
@@ -57,7 +57,7 @@ sampling with replacement, then the object may receive ticket numbers
 for generations 2, 3, ... as needed.  For a given object, its ticket
 numbers will increase with the generation number.
 
-Ticket numbers are real numbers in the range (0, 1).  
+Ticket numbers are real numbers in the range (0, 1).
 
 Let TktNo(id, gen) denote the ticket number of the object with given
 id and generation, where id is an object id and gen a positive
@@ -169,6 +169,23 @@ Ticket = collections.namedtuple("Ticket",
                                  'generation'])
 
 
+def f_format(x):
+    """
+    Return string "(f*12)abc" if x starts with 12 fs.
+    """
+
+    x0 = (x+'0').lower()
+    num_fs = min([i for i in range(len(x0)) if x0[i] < 'f'])
+    mantissa_display_length = 10
+    if num_fs > 4:
+        rest = x[num_fs:]
+        rest = rest[:mantissa_display_length]
+        return "(f*{}){}".format(num_fs, rest)
+    else:
+        x = x[:mantissa_display_length]
+        return x
+
+
 def tktstr(ticket):
     """
     Return short printable form of a ticket.
@@ -177,7 +194,7 @@ def tktstr(ticket):
     significant digits of the ticket number.
     """
 
-    return ("{:7}".format(ticket.ticket_number),
+    return (f_format(ticket.ticket_number),
             ticket.id,
             ticket.generation)
 
@@ -216,7 +233,6 @@ def sha256_uniform(hash_input, x, seed):
 def first_ticket(id, seed):
     "Return initial (generation 1) ticket for the given id."
 
-                           
     seed_id = sha256(seed)+str(id)
     prng = sha256_prng(seed_id)
     return Ticket(hexfrac.uniform(prng), id, 1)
@@ -284,11 +300,13 @@ def sampler(id_list,
                              Otherwise, each output element is a triple
                              (ticket) of the form:
                                  (ticket_number, id, generation)
-                             where 
-                                ticket_number is a real number (as a hex string),
-                                id is an id from id_list, and 
-                                generation is the number of times this id has 
-                                    been sampled so far (including the current sample).
+                             where
+                                ticket_number is a real number
+                                    (as a hex string),
+                                id is an id from id_list, and
+                                generation is the number of times this id has
+                                    been sampled so far
+                                    (including the current sample).
         drop              -- an integer saying how many of the output
                              sequence to drop
                              (defaults to 0)
@@ -308,7 +326,7 @@ def sampler(id_list,
         gen_sample        -- a generator for the sample.  If the
                              sampling is without replacement, then the
                              result is a generator for a finite list of
-                             ids (if ids_only is True, else tickets), 
+                             ids (if ids_only is True, else tickets),
                              a pseudorandom permutation of id_list.
                              If the sampling is with replacement, then
                              the generator can be run forever, and a given
@@ -332,7 +350,7 @@ def sampler(id_list,
         A-3
         B-1
 
-        # Take a sample of size 3. 
+        # Take a sample of size 3.
         # (Note consistency with previous example.)
         list(sampler(['A-1', 'A-2', 'A-3',
                       'B-1', 'B-2'],
