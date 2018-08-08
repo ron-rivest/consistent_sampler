@@ -1,4 +1,4 @@
-# consistent-sampler.py
+# consistent_sampler.py
 # by Ronald L. Rivest
 # August 8, 2018
 # python3
@@ -17,6 +17,7 @@ Differences include:
    -- use of a random seed
    -- use of high-precision numbers based on arbtrary-precision
       hexadecimal fractions between 0 and 1
+      (Thanks to Philip Stark for suggesting string representations.)
    -- ticket numbers depend on generation number,
       and are independent of ticket numbers computed for other
       objects ('consistent sampling')
