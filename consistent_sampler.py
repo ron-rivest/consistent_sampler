@@ -220,14 +220,15 @@ def sha256_prng(seed):
         counter += 1
 
 
-def sha256_uniform(hash_input, x, seed):
+def sha256_uniform(hash_input, seed):
     """
     Return high-precision pseudorandom real in (x, 1), depending
     on the given random seed and the hash_input.
     """
 
-    hex_val = sha256(sha256(seed) + hash_input)
-    return hexfrac.uniform(sha256_prng(hex_val))
+    seed_hash = sha256(seed)
+    seed_hash_hash_input = seed_hash + str(hash_input)
+    return hexfrac.uniform(sha256_prng(seed_hash_hash_input))
 
 
 def first_ticket(id, seed):
@@ -252,7 +253,10 @@ def next_ticket(ticket, seed):
     """
 
     old_ticket_number, id, generation = ticket
-    prng = sha256_prng(sha256(str(id))+str(generation))
+    seed_hash = sha256(seed)
+    seed_id_hash = sha256(seed_hash + str(id))
+    seed_id_gen_hash = sha256(seed_id_hash + str(generation))
+    prng = sha256_prng(seed_id_gen_hash)
     new_ticket_number = hexfrac.uniform_larger(old_ticket_number, prng)
     return Ticket(new_ticket_number, id, generation+1)
 
@@ -343,12 +347,12 @@ def sampler(id_list,
                       ids_only=True,
                       print_items=True))
         ==>
-        A-1
-        A-2
-        B-3
         B-2
-        A-3
+        A-2
         B-1
+        A-3
+        B-3
+        A-1
 
         # Take a sample of size 3.
         # (Note consistency with previous example.)
@@ -358,9 +362,9 @@ def sampler(id_list,
                       ids_only=True,
                       print_items=True))
         ==>
-        A-1
+        B-2
         A-2
-        B-3
+        B-1
 
         # Note B's are in same relative order as within above output.
         list(sampler(['B-1', 'B-2', 'B-3'],
@@ -368,9 +372,9 @@ def sampler(id_list,
                  ids_only=True,
                  print_items=True))
         ==>
-        B-3
         B-2
         B-1
+        B-3
 
         # Same as earlier example, but printing complete tickets.
         list(sampler(['A-1', 'A-2', 'A-3',
@@ -378,21 +382,22 @@ def sampler(id_list,
                      seed=31415,
                      print_items=True))
         ==>
-        ('-0.999253', 'A-1', 1)
-        ('-0.947505', 'A-2', 1)
-        ('-0.851521', 'B-3', 1)
-        ('-0.687933', 'B-2', 1)
-        ('-0.360829', 'A-3', 1)
-        ('-0.318288', 'B-1', 1)
+        ('2e9d5f9aba', 'B-2', 1)
+        ('4a2ffd5ea0', 'A-2', 1)
+        ('618a9e15e1', 'B-1', 1)
+        ('85546d4082', 'A-3', 1)
+        ('c8af1c356e', 'B-3', 1)
+        ('d6283d2067', 'A-1', 1)
+
 
         # Same as earlier example, but showing complete tickets.
         list(sampler(['B-1', 'B-2', 'B-3'],
                      seed=31415,
                      print_items=True))
         ==>
-        ('-0.851521', 'B-3', 1)
-        ('-0.687933', 'B-2', 1)
-        ('-0.318288', 'B-1', 1)
+        ('2e9d5f9aba', 'B-2', 1)
+        ('618a9e15e1', 'B-1', 1)
+        ('c8af1c356e', 'B-3', 1)
 
 
         # Same as earlier example, but sampling with replacement.
@@ -403,22 +408,22 @@ def sampler(id_list,
                      take=16,
                      print_items=True))
         ==>
-        ('-0.999253', 'A-1', 1)
-        ('-0.947505', 'A-2', 1)
-        ('-0.851521', 'B-3', 1)
-        ('-0.734823', 'A-2', 2)
-        ('-0.687933', 'B-2', 1)
-        ('-0.632056', 'A-2', 3)
-        ('-0.392454', 'B-2', 2)
-        ('-0.389867', 'B-3', 2)
-        ('-0.360829', 'A-3', 1)
-        ('-0.318288', 'B-1', 1)
-        ('-0.259272', 'B-1', 2)
-        ('-0.201141', 'B-3', 3)
-        ('-0.18426', 'B-2', 3)
-        ('-0.168377', 'B-1', 3)
-        ('-0.131141', 'A-3', 2)
-        ('-0.123386', 'A-1', 2)
+        ('2e9d5f9aba', 'B-2', 1)
+        ('4a2ffd5ea0', 'A-2', 1)
+        ('618a9e15e1', 'B-1', 1)
+        ('85546d4082', 'A-3', 1)
+        ('b57805a444', 'A-2', 2)
+        ('b5c88ebfad', 'A-3', 2)
+        ('c8af1c356e', 'B-3', 1)
+        ('cb72231f6e', 'A-3', 3)
+        ('cdc434ff90', 'A-3', 4)
+        ('d6283d2067', 'A-1', 1)
+        ('d94b03c2de', 'A-3', 5)
+        ('db159e73ee', 'B-1', 2)
+        ('dc69f4df37', 'B-1', 3)
+        ('dc9fbf311a', 'A-3', 6)
+        ('e0796a2844', 'A-1', 2)
+        ('e2d51fea5c', 'A-2', 3)
 
         # Same as earlier example, but sampling with replacement.
         list(sampler(['B-1', 'B-2', 'B-3'],
@@ -427,22 +432,22 @@ def sampler(id_list,
                      take=16,
                      print_items=True))
         ==>
-        ('-0.851521', 'B-3', 1)
-        ('-0.687933', 'B-2', 1)
-        ('-0.392454', 'B-2', 2)
-        ('-0.389867', 'B-3', 2)
-        ('-0.318288', 'B-1', 1)
-        ('-0.259272', 'B-1', 2)
-        ('-0.201141', 'B-3', 3)
-        ('-0.18426', 'B-2', 3)
-        ('-0.168377', 'B-1', 3)
-        ('-0.118745', 'B-1', 4)
-        ('-0.0950435', 'B-1', 5)
-        ('-0.0373682', 'B-3', 4)
-        ('-0.0137308', 'B-2', 4)
-        ('-0.00998558', 'B-2', 5)
-        ('-0.00659671', 'B-3', 5)
-        ('-0.00633067', 'B-3', 6)
+        ('2e9d5f9aba', 'B-2', 1)
+        ('618a9e15e1', 'B-1', 1)
+        ('c8af1c356e', 'B-3', 1)
+        ('db159e73ee', 'B-1', 2)
+        ('dc69f4df37', 'B-1', 3)
+        ('ec0da05ac1', 'B-1', 4)
+        ('ecad7358fb', 'B-2', 2)
+        ('eee5b7ecc2', 'B-1', 5)
+        ('efb9d6be51', 'B-2', 3)
+        ('f64d1a8269', 'B-2', 4)
+        ('f94a77d5a5', 'B-3', 2)
+        ('fb1bea06a0', 'B-3', 3)
+        ('fd5d5ee5ac', 'B-1', 6)
+        ('fea656e942', 'B-1', 7)
+        ('feb3b3f35d', 'B-3', 4)
+        ('fedfc9a1a8', 'B-3', 5)
 
         # show ticket sequence for a single object
         list(sampler(['B-1'],
@@ -451,23 +456,24 @@ def sampler(id_list,
                      take=16,
                     print_items=True))
         ==>
-        ('-0.318288', 'B-1', 1)
-        ('-0.259272', 'B-1', 2)
-        ('-0.168377', 'B-1', 3)
-        ('-0.118745', 'B-1', 4)
-        ('-0.0950435', 'B-1', 5)
-        ('-0.00469905', 'B-1', 6)
-        ('-0.00458165', 'B-1', 7)
-        ('-0.00202772', 'B-1', 8)
-        ('-0.0018408', 'B-1', 9)
-        ('-0.000405186', 'B-1', 10)
-        ('-0.000364227', 'B-1', 11)
-        ('-0.000203889', 'B-1', 12)
-        ('-0.000111951', 'B-1', 13)
-        ('-4.28759e-5', 'B-1', 14)
-        ('-4.14729e-5', 'B-1', 15)
-        ('-1.8253e-5', 'B-1', 16)
-    """
+        ('618a9e15e1', 'B-1', 1)
+        ('db159e73ee', 'B-1', 2)
+        ('dc69f4df37', 'B-1', 3)
+        ('ec0da05ac1', 'B-1', 4)
+        ('eee5b7ecc2', 'B-1', 5)
+        ('fd5d5ee5ac', 'B-1', 6)
+        ('fea656e942', 'B-1', 7)
+        ('ffaf968a78', 'B-1', 8)
+        ('ffb7a4c2db', 'B-1', 9)
+        ('ffebd93ada', 'B-1', 10)
+        ('fffe2caeda', 'B-1', 11)
+        ('ffffa06cce', 'B-1', 12)
+        ('ffffb24892', 'B-1', 13)
+        ('(f*5)cde8184dd4', 'B-1', 14)
+        ('(f*5)d747c7fe1e', 'B-1', 15)
+        ('(f*5)e690b68344', 'B-1', 16)
+
+       """
 
     heap = []
     for id in id_list:
