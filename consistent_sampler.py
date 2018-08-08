@@ -5,7 +5,7 @@
 
 """Routines to provide random samples from finite collections of
 objects, using sampling with replacement or sampling without
-replacement.  
+replacement.
 
 Method has consistency in relative sampling order when sampling a
 subset or superset of objects.  We thus call this sampling method
@@ -15,10 +15,11 @@ Very similar to implementation of same ideas by Neal McBurnett:
    https://gist.github.com/nealmcb/b297237c50421f2a75d5aee682cd656d
 Differences include:
    -- use of a random seed
-   -- use of high-precision numbers (mpmath package)
-   -- ticket numbers depend on generation number, and are independent
-      of ticket numbers computed for other objects ('consistent sampling')
-   -- range of ticket numbers is (-1, 0) and not (0, 1).
+   -- use of high-precision numbers based on arbtrary-precision
+      hexadecimal fractions between 0 and 1
+   -- ticket numbers depend on generation number,
+      and are independent of ticket numbers computed for other
+      objects ('consistent sampling')
 
 The intended use here is for election audits, but there is nothing
 specific in this code to elections.  For elections, the objects are
@@ -29,8 +30,8 @@ For a similar sampling method, see Stark's audit tools:
 
 The consistent sampling method associates a pseudorandom number (a
 "ticket number") with each object, then sampling objects in order of
-increasing ticket number.  The ticket numbers are real numbers from a
-bounded range (-1 to 0).
+increasing ticket number.  The ticket numbers are real numbers from
+the real interval (0,1).
 
 If used for sampling with replacement, then once an object is picked
 it is given a new but larger ticket number, and replaced in the
@@ -56,26 +57,21 @@ sampling with replacement, then the object may receive ticket numbers
 for generations 2, 3, ... as needed.  For a given object, its ticket
 numbers will increase with the generation number.
 
-Ticket numbers are negative real numbers in the range (-1, 0).  We use
-this somewhat unusual range to accomplish two properties: selecting
-tickets in order of increasing ticket number (which is what the python
-module heapq provides, without an option to choose in the other
-order), and allowing for tiny ranges where the size of the range is
-represented in the exponent, not the mantissa, of the ticket number.
+Ticket numbers are real numbers in the range (0, 1).
 
 Let TktNo(id, gen) denote the ticket number of the object with given
 id and generation, where id is an object id and gen a positive
 integer.  (The dependence upon the random seed is implicit here.)
 
 TktNo(id, gen) for gen=1 is a real number chosen uniformly in
-the interval (-1, 0).
+the interval (0, 1).
 
 TktNo(id, gen) for gen>1 is a real number chosen uniformly from
 the interval
-        (TktNo(id, gen-1), 0).
+        (TktNo(id, gen-1), 1).
 A ticket number for an object will be strictly larger than that
 object's previous generation ticket number, but will still be
-strictly less than 0.
+strictly less than 1.
 
 One nice feature of this approach is that it is parallelizable.  That
 is, you can work with separate object collections independently, and
@@ -133,11 +129,7 @@ first subcollection only.
 
 These ideas are not so new.  They are similar to Python's "decorate
 and sort" paradigm, for example.
-
-We use Python's "mpmath" so we may represent ticket numbers as
-arbitrary-precision real numbers.  This is helpful because when
-sampling with replacement the ticket numbers may become quite small if
-objects are sampled repeatedly.
+(GIVE MORE CITATIONS HERE.)
 
 The main (only) interface routine is the routine "sampler";
 the other routines are for internal use only.
@@ -147,21 +139,13 @@ the other routines are for internal use only.
 import collections
 import hashlib
 import heapq
-import mpmath
+
+import hexfrac
 
 
 # Global constants
 
-# Global constant defining precision of ticket numbers (16 decimal
-# digits). This value was chosen as it makes collisions very unlikely.
-# (Even so, collisions are handled in a deterministic way within the
-# heapq package, essentially resolving collisions in favor of having
-# the object with the lexicographically smaller id being chosen first.
-
-mpmath.mp.dps = 16
-
-MIN_TICKET_NUMBER = mpmath.mpf(-1.0)
-MAX_TICKET_NUMBER = mpmath.mpf(0.0)
+MIN_TICKET_NUMBER = ''
 
 
 # A Ticket is a record referring to one object.
@@ -185,6 +169,23 @@ Ticket = collections.namedtuple("Ticket",
                                  'generation'])
 
 
+def f_format(x):
+    """
+    Return string "(f*12)abc" if x starts with 12 fs.
+    """
+
+    x0 = (x+'0').lower()
+    num_fs = min([i for i in range(len(x0)) if x0[i] < 'f'])
+    mantissa_display_length = 10
+    if num_fs > 4:
+        rest = x[num_fs:]
+        rest = rest[:mantissa_display_length]
+        return "(f*{}){}".format(num_fs, rest)
+    else:
+        x = x[:mantissa_display_length]
+        return x
+
+
 def tktstr(ticket):
     """
     Return short printable form of a ticket.
@@ -193,7 +194,7 @@ def tktstr(ticket):
     significant digits of the ticket number.
     """
 
-    return (mpmath.nstr(ticket.ticket_number),
+    return (f_format(ticket.ticket_number),
             ticket.id,
             ticket.generation)
 
@@ -207,22 +208,35 @@ def sha256(hash_input):
                   .hexdigest()
 
 
-def sha256_uniform(hash_input, a, b, seed):
+def sha256_prng(seed):
     """
-    Return high-precision pseudorandom real in (a, b), depending
-    on the given random seed and the hash_input.
-    Uses mpmath for high-precision representation of such reals.
+    Generator for SHA256 in counter mode.
     """
 
-    hex_val = sha256(sha256(seed) + hash_input)
-    x = int(hex_val, 16) * mpmath.ldexp(1, -256)  # uniform(0,1)
-    return a + (b-a)*x
+    seed_hash = sha256(seed)
+    counter = 0
+    while True:
+        yield sha256(seed_hash+str(counter))
+        counter += 1
+
+
+def sha256_uniform(hash_input, seed):
+    """
+    Return high-precision pseudorandom real in (x, 1), depending
+    on the given random seed and the hash_input.
+    """
+
+    seed_hash = sha256(seed)
+    seed_hash_hash_input = seed_hash + str(hash_input)
+    return hexfrac.uniform(sha256_prng(seed_hash_hash_input))
 
 
 def first_ticket(id, seed):
     "Return initial (generation 1) ticket for the given id."
 
-    return next_ticket(Ticket(MIN_TICKET_NUMBER, id, 0), seed)
+    seed_id = sha256(seed)+str(id)
+    prng = sha256_prng(seed_id)
+    return Ticket(hexfrac.uniform(prng), id, 1)
 
 
 def next_ticket(ticket, seed):
@@ -232,18 +246,18 @@ def next_ticket(ticket, seed):
 
     Returned ticket has a ticket number that is a random real in
     the interval:
-          (ticket.ticket_number, MAX_TICKET_NUMBER)
+          (ticket.ticket_number, 1)
 
     The generation of the returned ticket is one larger than the
     generation of the input ticket.  The id is the same.
     """
 
     old_ticket_number, id, generation = ticket
-    hash_input = sha256(sha256(str(id))+str(generation))
-    new_ticket_number = sha256_uniform(hash_input,
-                                       old_ticket_number,
-                                       MAX_TICKET_NUMBER,
-                                       seed)
+    seed_hash = sha256(seed)
+    seed_id_hash = sha256(seed_hash + str(id))
+    seed_id_gen_hash = sha256(seed_id_hash + str(generation))
+    prng = sha256_prng(seed_id_gen_hash)
+    new_ticket_number = hexfrac.uniform_larger(old_ticket_number, prng)
     return Ticket(new_ticket_number, id, generation+1)
 
 
@@ -290,10 +304,13 @@ def sampler(id_list,
                              Otherwise, each output element is a triple
                              (ticket) of the form:
                                  (ticket_number, id, generation)
-                             where ticket_number is a real number, id is an
-                             id from id_list, and generation is the number
-                             of times this id has been sampled so far
-                             (including the current sample).
+                             where
+                                ticket_number is a real number
+                                    (as a hex string),
+                                id is an id from id_list, and
+                                generation is the number of times this id has
+                                    been sampled so far
+                                    (including the current sample).
         drop              -- an integer saying how many of the output
                              sequence to drop
                              (defaults to 0)
@@ -313,7 +330,7 @@ def sampler(id_list,
         gen_sample        -- a generator for the sample.  If the
                              sampling is without replacement, then the
                              result is a generator for a finite list of
-                             ids (if ids_only is True, else tickets), 
+                             ids (if ids_only is True, else tickets),
                              a pseudorandom permutation of id_list.
                              If the sampling is with replacement, then
                              the generator can be run forever, and a given
@@ -330,14 +347,14 @@ def sampler(id_list,
                       ids_only=True,
                       print_items=True))
         ==>
-        A-1
-        A-2
-        B-3
         B-2
-        A-3
+        A-2
         B-1
+        A-3
+        B-3
+        A-1
 
-        # Take a sample of size 3. 
+        # Take a sample of size 3.
         # (Note consistency with previous example.)
         list(sampler(['A-1', 'A-2', 'A-3',
                       'B-1', 'B-2'],
@@ -345,9 +362,9 @@ def sampler(id_list,
                       ids_only=True,
                       print_items=True))
         ==>
-        A-1
+        B-2
         A-2
-        B-3
+        B-1
 
         # Note B's are in same relative order as within above output.
         list(sampler(['B-1', 'B-2', 'B-3'],
@@ -355,9 +372,9 @@ def sampler(id_list,
                  ids_only=True,
                  print_items=True))
         ==>
-        B-3
         B-2
         B-1
+        B-3
 
         # Same as earlier example, but printing complete tickets.
         list(sampler(['A-1', 'A-2', 'A-3',
@@ -365,21 +382,22 @@ def sampler(id_list,
                      seed=31415,
                      print_items=True))
         ==>
-        ('-0.999253', 'A-1', 1)
-        ('-0.947505', 'A-2', 1)
-        ('-0.851521', 'B-3', 1)
-        ('-0.687933', 'B-2', 1)
-        ('-0.360829', 'A-3', 1)
-        ('-0.318288', 'B-1', 1)
+        ('2e9d5f9aba', 'B-2', 1)
+        ('4a2ffd5ea0', 'A-2', 1)
+        ('618a9e15e1', 'B-1', 1)
+        ('85546d4082', 'A-3', 1)
+        ('c8af1c356e', 'B-3', 1)
+        ('d6283d2067', 'A-1', 1)
+
 
         # Same as earlier example, but showing complete tickets.
         list(sampler(['B-1', 'B-2', 'B-3'],
                      seed=31415,
                      print_items=True))
         ==>
-        ('-0.851521', 'B-3', 1)
-        ('-0.687933', 'B-2', 1)
-        ('-0.318288', 'B-1', 1)
+        ('2e9d5f9aba', 'B-2', 1)
+        ('618a9e15e1', 'B-1', 1)
+        ('c8af1c356e', 'B-3', 1)
 
 
         # Same as earlier example, but sampling with replacement.
@@ -390,22 +408,22 @@ def sampler(id_list,
                      take=16,
                      print_items=True))
         ==>
-        ('-0.999253', 'A-1', 1)
-        ('-0.947505', 'A-2', 1)
-        ('-0.851521', 'B-3', 1)
-        ('-0.734823', 'A-2', 2)
-        ('-0.687933', 'B-2', 1)
-        ('-0.632056', 'A-2', 3)
-        ('-0.392454', 'B-2', 2)
-        ('-0.389867', 'B-3', 2)
-        ('-0.360829', 'A-3', 1)
-        ('-0.318288', 'B-1', 1)
-        ('-0.259272', 'B-1', 2)
-        ('-0.201141', 'B-3', 3)
-        ('-0.18426', 'B-2', 3)
-        ('-0.168377', 'B-1', 3)
-        ('-0.131141', 'A-3', 2)
-        ('-0.123386', 'A-1', 2)
+        ('2e9d5f9aba', 'B-2', 1)
+        ('4a2ffd5ea0', 'A-2', 1)
+        ('618a9e15e1', 'B-1', 1)
+        ('85546d4082', 'A-3', 1)
+        ('b57805a444', 'A-2', 2)
+        ('b5c88ebfad', 'A-3', 2)
+        ('c8af1c356e', 'B-3', 1)
+        ('cb72231f6e', 'A-3', 3)
+        ('cdc434ff90', 'A-3', 4)
+        ('d6283d2067', 'A-1', 1)
+        ('d94b03c2de', 'A-3', 5)
+        ('db159e73ee', 'B-1', 2)
+        ('dc69f4df37', 'B-1', 3)
+        ('dc9fbf311a', 'A-3', 6)
+        ('e0796a2844', 'A-1', 2)
+        ('e2d51fea5c', 'A-2', 3)
 
         # Same as earlier example, but sampling with replacement.
         list(sampler(['B-1', 'B-2', 'B-3'],
@@ -414,22 +432,22 @@ def sampler(id_list,
                      take=16,
                      print_items=True))
         ==>
-        ('-0.851521', 'B-3', 1)
-        ('-0.687933', 'B-2', 1)
-        ('-0.392454', 'B-2', 2)
-        ('-0.389867', 'B-3', 2)
-        ('-0.318288', 'B-1', 1)
-        ('-0.259272', 'B-1', 2)
-        ('-0.201141', 'B-3', 3)
-        ('-0.18426', 'B-2', 3)
-        ('-0.168377', 'B-1', 3)
-        ('-0.118745', 'B-1', 4)
-        ('-0.0950435', 'B-1', 5)
-        ('-0.0373682', 'B-3', 4)
-        ('-0.0137308', 'B-2', 4)
-        ('-0.00998558', 'B-2', 5)
-        ('-0.00659671', 'B-3', 5)
-        ('-0.00633067', 'B-3', 6)
+        ('2e9d5f9aba', 'B-2', 1)
+        ('618a9e15e1', 'B-1', 1)
+        ('c8af1c356e', 'B-3', 1)
+        ('db159e73ee', 'B-1', 2)
+        ('dc69f4df37', 'B-1', 3)
+        ('ec0da05ac1', 'B-1', 4)
+        ('ecad7358fb', 'B-2', 2)
+        ('eee5b7ecc2', 'B-1', 5)
+        ('efb9d6be51', 'B-2', 3)
+        ('f64d1a8269', 'B-2', 4)
+        ('f94a77d5a5', 'B-3', 2)
+        ('fb1bea06a0', 'B-3', 3)
+        ('fd5d5ee5ac', 'B-1', 6)
+        ('fea656e942', 'B-1', 7)
+        ('feb3b3f35d', 'B-3', 4)
+        ('fedfc9a1a8', 'B-3', 5)
 
         # show ticket sequence for a single object
         list(sampler(['B-1'],
@@ -438,23 +456,24 @@ def sampler(id_list,
                      take=16,
                     print_items=True))
         ==>
-        ('-0.318288', 'B-1', 1)
-        ('-0.259272', 'B-1', 2)
-        ('-0.168377', 'B-1', 3)
-        ('-0.118745', 'B-1', 4)
-        ('-0.0950435', 'B-1', 5)
-        ('-0.00469905', 'B-1', 6)
-        ('-0.00458165', 'B-1', 7)
-        ('-0.00202772', 'B-1', 8)
-        ('-0.0018408', 'B-1', 9)
-        ('-0.000405186', 'B-1', 10)
-        ('-0.000364227', 'B-1', 11)
-        ('-0.000203889', 'B-1', 12)
-        ('-0.000111951', 'B-1', 13)
-        ('-4.28759e-5', 'B-1', 14)
-        ('-4.14729e-5', 'B-1', 15)
-        ('-1.8253e-5', 'B-1', 16)
-    """
+        ('618a9e15e1', 'B-1', 1)
+        ('db159e73ee', 'B-1', 2)
+        ('dc69f4df37', 'B-1', 3)
+        ('ec0da05ac1', 'B-1', 4)
+        ('eee5b7ecc2', 'B-1', 5)
+        ('fd5d5ee5ac', 'B-1', 6)
+        ('fea656e942', 'B-1', 7)
+        ('ffaf968a78', 'B-1', 8)
+        ('ffb7a4c2db', 'B-1', 9)
+        ('ffebd93ada', 'B-1', 10)
+        ('fffe2caeda', 'B-1', 11)
+        ('ffffa06cce', 'B-1', 12)
+        ('ffffb24892', 'B-1', 13)
+        ('(f*5)cde8184dd4', 'B-1', 14)
+        ('(f*5)d747c7fe1e', 'B-1', 15)
+        ('(f*5)e690b68344', 'B-1', 16)
+
+       """
 
     heap = []
     for id in id_list:
