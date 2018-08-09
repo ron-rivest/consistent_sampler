@@ -1,30 +1,30 @@
 # consistent_sampler
-Routine for providing 'consistent sampling' (intended for use in election audits, 
-although usable in other applications. as well).
+Routine ``sampler`` for providing 'consistent sampling' --- sampling that is
+consistent across subsets.  Consistent sampling works by associating a random number with
+each element; the desired sample is found by taking the subset of the desired sample size
+containing those elements with the smallest associated random numbers.  
+
+The sampling is *consistent* since it consistently favors elements with small associated
+random numbers; if two sets S and T have substantial overlap, then their samples of a given 
+size will also have substantial overlap (for the same random seed).
+
+This routine is intended for use in election audits, but is easily usable for other applications.
 
 This routine takes as input a finite collection of distinct object ids, a random seed, and
-some other parameters.
+some other parameters.  The sampling may be "with replacement" or "without replacement".
+One of the additional parameters to the routine is "take" -- the size of the desired
+sample.
 
 It provides as output a "sampling order" --- an ordered list of object ids that determine
-the sample.
+the sample.  For sampling without replacement, the output can not be longer than the input, as no
+object may appear in the sample more than once.  For sampling with replacement, the output 
+may be infinite in length, as an object may appear in the sample an arbitrarily large 
+(even infinite) number of times.  The output of ``sampler`` is therefore always a python 
+generator, capable of producing an infinitely long stream of output object ids.
 
-The sampling may be "with replacement" or "without replacement".
+As a small example of sampling without replacement:
 
-One of the additional parameters to the routine is "take" -- the size of the desired
-sample.  
-
-For sampling without replacement, the output can not be longer than the input, as no
-object may appear in the sample more than once.
-
-For sampling with replacement, the output may be infinite in length, as an object may
-appear in the sample an arbitrarily large (even infinite) number of times.
-
-The output of this routine is therefore always a python generator, capable of producing
-an infinitely long stream of output object ids.
-
-As a small example:
-
-    g = sample(['A-1', 'A-2', 'B-1', 'B-2', 'B-3'], with_replacement=False, take=4, seed=314159)
+    g = sampler(['A-1', 'A-2', 'B-1', 'B-2', 'B-3'], with_replacement=False, take=4, seed=314159)
   
 yields a generator g whose output can be printed:
 
