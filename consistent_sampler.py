@@ -1,6 +1,6 @@
 # consistent_sampler.py
 # by Ronald L. Rivest
-# August 8, 2018
+# August 9, 2018
 # python3
 
 """Routines to provide random samples from finite collections of
@@ -144,11 +144,6 @@ import heapq
 import hexfrac
 
 
-# Global constants
-
-MIN_TICKET_NUMBER = ''
-
-
 # A Ticket is a record referring to one object.
 
 # The "id" of the ticket is the id of the object (perhaps giving
@@ -175,9 +170,9 @@ def f_format(x):
     Return string "(f*12)abc" if x starts with 12 fs.
     """
 
+    mantissa_display_length = 10
     x0 = (x+'0').lower()
     num_fs = min([i for i in range(len(x0)) if x0[i] < 'f'])
-    mantissa_display_length = 10
     if num_fs > 4:
         rest = x[num_fs:]
         rest = rest[:mantissa_display_length]
@@ -337,7 +332,8 @@ def sampler(id_list,
                              the generator can be run forever, and a given
                              id may be sampled many times.
 
-    Examples:
+    Examples (see routine test_sampler in test_consistent_sampler.py for
+    corresponding code):
 
         # Note "list" is to cause generator to execute, thus
         # ensuring printout of items selected.
@@ -499,63 +495,3 @@ def sampler(id_list,
             return
 
 
-def test_sampler():
-    # in following; list() wrapper is needed so
-    # print_items has effect.
-    print()
-    list(sampler(['A-1', 'A-2', 'A-3',
-                  'B-1', 'B-2', 'B-3'],
-                 seed=31415,
-                 ids_only=True,
-                 print_items=True))
-
-    print()
-    list(sampler(['A-1', 'A-2', 'A-3',
-                  'B-1', 'B-2', 'B-3'],
-                 seed=31415,
-                 ids_only=True,
-                 take=3,
-                 print_items=True))
-
-    print()
-    list(sampler(['B-1', 'B-2', 'B-3'],
-                 seed=31415,
-                 ids_only=True,
-                 print_items=True))
-
-    print()
-    list(sampler(['A-1', 'A-2', 'A-3',
-                  'B-1', 'B-2', 'B-3'],
-                 seed=31415,
-                 print_items=True))
-
-    print()
-    list(sampler(['B-1', 'B-2', 'B-3'],
-                 seed=31415,
-                 print_items=True))
-
-    print()
-    list(sampler(['A-1', 'A-2', 'A-3',
-                  'B-1', 'B-2', 'B-3'],
-                 seed=31415,
-                 with_replacement=True,
-                 take=16,
-                 print_items=True))
-
-    print()
-    list(sampler(['B-1', 'B-2', 'B-3'],
-                 seed=31415,
-                 with_replacement=True,
-                 take=16,
-                 print_items=True))
-
-    print()
-    list(sampler(['B-1'],
-                 seed=31415,
-                 with_replacement=True,
-                 take=16,
-                 print_items=True))
-
-
-if __name__ == "__main__":
-    test_sampler()
