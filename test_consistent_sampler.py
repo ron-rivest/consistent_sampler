@@ -69,5 +69,32 @@ def test_sampler():
                  print_items=True))
 
 
-if __name__ == "__main__":
+def test_hexfrac():
+    import hashlib
+    counter = 0
+
+    def sha256_prng():
+        counter = 0
+        while True:
+            counter += 1
+            yield hashlib.sha256(str(counter).encode()).hexdigest()
+
+    prng = sha256_prng()
+
+    print("Ten random 64-digit hex strings:")
+    for i in range(10):
+        # print(next(prng))
+        x = hexfrac_uniform(prng)
+        print(x)
+
+    print("100 invocations of 'uniform_larger':")
+    print(x)
+    for i in range(20):
+        x = hexfrac_uniform_larger(x, prng)
+        print("-->", x)
+
+
+if __name__ == '__main__':
+    test_hexfrac()
     test_sampler()
+

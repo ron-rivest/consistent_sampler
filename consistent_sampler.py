@@ -213,8 +213,8 @@ def sha256_prng(seed):
         counter += 1
 
 
-"""Routines to provide support for arbitrary-precision hexadecimal
-fractions between 0 and 1.
+"""'Hexfrac' routines to provide support for arbitrary-precision
+hexadecimal fractions between 0 and 1.
 
 Each such hexadecimal fraction is represented as an ordinary python
 string of hex digits (with hex digits in lower case).
@@ -233,8 +233,7 @@ hex string of a fixed length.
 
 def hexfrac_uniform(prng):
     """
-    Return a hexadecimal fraction uniformly distribution
-    in (0,1).
+    Return hexadecimal fraction uniformly distributed in (0,1).
     """
 
     return next(prng)
@@ -248,26 +247,14 @@ def hexfrac_uniform_larger(x, prng):
     """
 
     x = x.lower()       # just to be sure
-    x = x+'0'
-    non_f_position = min([i for i in range(len(x)) if x[i] < 'f'])
-
+    x = x+'0'           # in case s is all fs
+    first_non_f_position = min([i for i in range(len(x))\
+                                if x[i] < 'f'])
     y = ''
     while y <= x:
-        y = x[:non_f_position]
+        y = x[:first_non_f_position]
         y = y + next(prng)
-
     return y
-
-
-def sha256_uniform(hash_input, seed):
-    """
-    Return high-precision pseudorandom real in (x, 1), depending
-    on the given random seed and the hash_input.
-    """
-
-    seed_hash = sha256(seed)
-    seed_hash_hash_input = seed_hash + str(hash_input)
-    return hexfrac_uniform(sha256_prng(seed_hash_hash_input))
 
 
 def first_ticket(id, seed):
@@ -315,8 +302,8 @@ def draw_with_replacement(heap, seed):
     """
 
     ticket = heapq.heappop(heap)
-    ticket2 = next_ticket(ticket, seed)
-    heapq.heappush(heap, ticket2)
+    replacement_ticket = next_ticket(ticket, seed)
+    heapq.heappush(heap, replacement_ticket)
     return ticket, heap
 
 
