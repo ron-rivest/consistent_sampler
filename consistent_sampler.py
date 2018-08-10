@@ -32,7 +32,7 @@ For a similar sampling method, see Stark's audit tools:
 The consistent sampling method associates a pseudorandom number (a
 "ticket number") with each object, then sampling objects in order of
 increasing ticket number.  The ticket numbers are real numbers from
-the real interval (0,1).
+the interval (0,1).
 
 If used for sampling with replacement, then once an object is picked
 it is given a new but larger ticket number, and replaced in the
