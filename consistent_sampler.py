@@ -15,7 +15,7 @@ Very similar to implementation of same ideas by Neal McBurnett:
    https://gist.github.com/nealmcb/b297237c50421f2a75d5aee682cd656d
 Differences include:
    -- use of a random seed
-   -- use of high-precision numbers based on arbtrary-precision
+   -- use of high-precision numbers represented as arbtrary-precision
       hexadecimal fractions between 0 and 1
       (Thanks to Philip Stark for suggesting string representations.)
    -- ticket numbers depend on generation number,
@@ -141,20 +141,23 @@ import collections
 import hashlib
 import heapq
 
-# A Ticket is a record referring to one object.
+"""
+A Ticket is a record referring to one object.
 
-# The "id" of the ticket is the id of the object (perhaps giving
-# including its location).  The id is typically a string, but it could
-# be a tuple or the like; it just needs to have a string
-# representation.
+The "id" of the ticket is the id of the object (perhaps giving
+including its location).  The id is typically a string, but it could
+be a tuple or the like; it just needs to have a string representation.
 
-# The "ticket number" is the real number used for sampling
-# objects; objects whose tickets have smaller ticket numbers are sampled
-# earlier.  If sampling is done with replacement, then the ticket gets a
-# new "generation" value each time it is sampled (one larger than the
-# last one).  In this case, the ticket number is monotonically
-# increasing with each generation.  The ticket number is given first
-# so that a set of tickets will sort into sampling order.
+The "ticket number" is the real number used for sampling objects;
+objects whose tickets have smaller ticket numbers are sampled earlier.
+The ticket number is given first so that a set of tickets will sort
+into sampling order.
+
+If sampling is done with replacement, then the ticket gets a new
+"generation" value each time it is sampled (one larger than the last
+one).  In this case, the ticket number is monotonically increasing
+with each generation.
+"""
 
 Ticket = collections.namedtuple("Ticket",
                                 ['ticket_number',
@@ -165,12 +168,15 @@ Ticket = collections.namedtuple("Ticket",
 def f_format(x):
     """
     Return string "(f*12)abc" if x starts with 12 fs.
+
+    Used to compress output of ticket_number in tktstr.
     """
 
     mantissa_display_length = 10
+    min_fs_threshold = 5
     x0 = (x+'0').lower()
     num_fs = min([i for i in range(len(x0)) if x0[i] < 'f'])
-    if num_fs > 4:
+    if num_fs >= min_fs_threshold:
         rest = x[num_fs:]
         rest = rest[:mantissa_display_length]
         return "(f*{}){}".format(num_fs, rest)
@@ -248,7 +254,7 @@ def hexfrac_uniform_larger(x, prng):
 
     x = x.lower()       # just to be sure
     x = x+'0'           # in case s is all fs
-    first_non_f_position = min([i for i in range(len(x))\
+    first_non_f_position = min([i for i in range(len(x))
                                 if x[i] < 'f'])
     y = ''
     while y <= x:
@@ -499,7 +505,6 @@ def sampler(id_list,
         ('(f*5)cde8184dd4', 'B-1', 14)
         ('(f*5)d747c7fe1e', 'B-1', 15)
         ('(f*5)e690b68344', 'B-1', 16)
-
        """
 
     heap = []
@@ -523,5 +528,3 @@ def sampler(id_list,
                 yield ticket
         elif count > drop+take:
             return
-
-
