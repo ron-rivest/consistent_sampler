@@ -141,9 +141,6 @@ import collections
 import hashlib
 import heapq
 
-import hexfrac
-
-
 # A Ticket is a record referring to one object.
 
 # The "id" of the ticket is the id of the object (perhaps giving
@@ -216,6 +213,52 @@ def sha256_prng(seed):
         counter += 1
 
 
+"""Routines to provide support for arbitrary-precision hexadecimal
+fractions between 0 and 1.
+
+Each such hexadecimal fraction is represented as an ordinary python
+string of hex digits (with hex digits in lower case).
+
+These routines are intended for use with the routine
+    consistent_sampler.py
+which is intended for use in election audits,
+but which can be used elsewhere.
+
+These routines are passed a generator "prng"
+which is a pseudorandom number generator.
+Each call next(prng) returns a fresh pseudo-random
+hex string of a fixed length.
+"""
+
+
+def hexfrac_uniform(prng):
+    """
+    Return a hexadecimal fraction uniformly distribution
+    in (0,1).
+    """
+
+    return next(prng)
+
+
+def hexfrac_uniform_larger(x, prng):
+    """
+    With input a hex string x (to be interpreted as a fraction
+    between 0 and 1), return a hex string that represents a
+    fraction y uniformly chosen in the interval (x, 1).
+    """
+
+    x = x.lower()       # just to be sure
+    x = x+'0'
+    non_f_position = min([i for i in range(len(x)) if x[i] < 'f'])
+
+    y = ''
+    while y <= x:
+        y = x[:non_f_position]
+        y = y + next(prng)
+
+    return y
+
+
 def sha256_uniform(hash_input, seed):
     """
     Return high-precision pseudorandom real in (x, 1), depending
@@ -224,7 +267,7 @@ def sha256_uniform(hash_input, seed):
 
     seed_hash = sha256(seed)
     seed_hash_hash_input = seed_hash + str(hash_input)
-    return hexfrac.uniform(sha256_prng(seed_hash_hash_input))
+    return hexfrac_uniform(sha256_prng(seed_hash_hash_input))
 
 
 def first_ticket(id, seed):
@@ -232,7 +275,7 @@ def first_ticket(id, seed):
 
     seed_id = sha256(seed)+str(id)
     prng = sha256_prng(seed_id)
-    return Ticket(hexfrac.uniform(prng), id, 1)
+    return Ticket(hexfrac_uniform(prng), id, 1)
 
 
 def next_ticket(ticket, seed):
@@ -253,7 +296,7 @@ def next_ticket(ticket, seed):
     seed_id_hash = sha256(seed_hash + str(id))
     seed_id_gen_hash = sha256(seed_id_hash + str(generation))
     prng = sha256_prng(seed_id_gen_hash)
-    new_ticket_number = hexfrac.uniform_larger(old_ticket_number, prng)
+    new_ticket_number = hexfrac_uniform_larger(old_ticket_number, prng)
     return Ticket(new_ticket_number, id, generation+1)
 
 
