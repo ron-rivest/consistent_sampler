@@ -223,47 +223,25 @@ def sha256_prng(seed):
         counter += 1
 
 
-"""'Hexfrac' routines to provide support for arbitrary-precision
-hexadecimal fractions between 0 and 1.
-
-Each such hexadecimal fraction is represented as an ordinary python
-string of hex digits (with hex digits in lower case).
-
-These routines are intended for use with the routine
-    consistent_sampler.py
-which is intended for use in election audits,
-but which can be used elsewhere.
-
-These routines are passed a generator "prng"
-which is a pseudorandom number generator.
-Each call next(prng) returns a fresh pseudo-random
-hex string of a fixed length.
-"""
-
-
-def hexfrac_uniform(prng):
-    """
-    Return hexadecimal fraction uniformly distributed in (0,1).
-    """
-
-    return next(prng)
-
-
-def hexfrac_uniform_larger(x, prng):
+def hexfrac_next(x):
     """
     With input a hex string x (to be interpreted as a fraction
     between 0 and 1), return a hex string that represents a
     fraction y uniformly chosen in the interval (x, 1).
+    The last 64 hex digits of the result are output of sha256
+    on value x.
     """
 
     x = x.lower()       # just to be sure
-    x = x+'0'           # in case s is all fs
-    first_non_f_position = min([i for i in range(len(x))
-                                if x[i] < 'f'])
+    x0 = x+'0'          # in case x is all fs
+    first_non_f_position = min([i for i in range(len(x0))
+                                if x0[i] < 'f'])
     y = ''
-    while y <= x:
-        y = x[:first_non_f_position]
-        y = y + next(prng)
+    i = 0
+    while y <= x0:
+        i = i + 1
+        y = x0[:first_non_f_position]
+        y = y + sha256(x + str(i))
     return y
 
 
@@ -271,16 +249,14 @@ def first_ticket(id, seed):
     "Return initial (generation 1) ticket for the given id."
 
     seed_id = sha256(seed)+":id:"+str(id)
-    prng = sha256_prng(seed_id)
-    return Ticket(hexfrac_uniform(prng), id, 1)
+    return Ticket(sha256(seed_id), id, 1)
 
 
-def next_ticket(ticket, seed):
+def next_ticket(ticket):
     """
-    Given a ticket, return the next ticket for the given ticket id,
-    using the given random seed to control the randomness.
+    Given a ticket, return the next ticket for the given ticket id.
 
-    Returned ticket has a ticket number that is a random real in
+    Returned ticket has a ticket number that is a pseudorandom real in
     the interval:
           (ticket.ticket_number, 1)
 
@@ -289,10 +265,7 @@ def next_ticket(ticket, seed):
     """
 
     old_ticket_number, id, generation = ticket
-    seed_id = sha256(seed)+":id:"+str(id)
-    seed_id_gen = sha256(seed_id) + ":gen:" + str(generation)
-    prng = sha256_prng(seed_id_gen)
-    new_ticket_number = hexfrac_uniform_larger(old_ticket_number, prng)
+    new_ticket_number = hexfrac_next(old_ticket_number)
     return Ticket(new_ticket_number, id, generation+1)
 
 
@@ -305,13 +278,13 @@ def draw_without_replacement(heap):
     return ticket, heap
 
 
-def draw_with_replacement(heap, seed):
+def draw_with_replacement(heap):
     """
     Return ticket drawn and new heap.
     """
 
     ticket = heapq.heappop(heap)
-    replacement_ticket = next_ticket(ticket, seed)
+    replacement_ticket = next_ticket(ticket)
     heapq.heappush(heap, replacement_ticket)
     return ticket, heap
 
@@ -515,7 +488,7 @@ def sampler(id_list,
     count = 0
     while len(heap) > 0:
         if with_replacement:
-            ticket, heap = draw_with_replacement(heap, seed)
+            ticket, heap = draw_with_replacement(heap)
         else:
             ticket, heap = draw_without_replacement(heap)
         count += 1

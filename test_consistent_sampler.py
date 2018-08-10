@@ -7,6 +7,8 @@
 Test routines for consistent_sampler.py
 """
 
+import numpy as np
+
 from consistent_sampler import *
 
 def test_sampler():
@@ -81,16 +83,13 @@ def test_hexfrac():
 
     prng = sha256_prng()
 
-    print("Ten random 64-digit hex strings:")
-    for i in range(10):
-        # print(next(prng))
-        x = hexfrac_uniform(prng)
-        print(x)
-
-    print("100 invocations of 'uniform_larger':")
+    print("First random fraction in hex.")
+    x = sha256(str(np.random.random))
     print(x)
+
+    print("20 invocations of 'hexfrac_next':")
     for i in range(20):
-        x = hexfrac_uniform_larger(x, prng)
+        x = hexfrac_next(x)
         print("-->", x)
 
 
