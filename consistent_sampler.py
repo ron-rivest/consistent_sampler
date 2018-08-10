@@ -358,10 +358,10 @@ def sampler(id_list,
         ==>
         B-1
         B-2
-        A-2
-        B-3
-        A-1
         A-3
+        B-3
+        A-2
+        A-1
 
         # Take a sample of size 3.
         # (Note consistency with previous example.)
@@ -373,7 +373,7 @@ def sampler(id_list,
         ==>
         B-1
         B-2
-        A-2
+        A-3
 
         # Note B's are in same relative order as within above output.
         list(sampler(['B-1', 'B-2', 'B-3'],
@@ -391,21 +391,21 @@ def sampler(id_list,
                      seed=31415,
                      print_items=True))
         ==>
-        ('209a9f6594', 'B-1', 1)
-        ('5ee90a669e', 'B-2', 1)
-        ('710ef2b7e8', 'A-2', 1)
-        ('b1d8c28550', 'B-3', 1)
-        ('f45c80bcba', 'A-1', 1)
-        ('fa2132c79a', 'A-3', 1)
+        ('019cc32266', 'B-1', 1)
+        ('3e3ceabc2e', 'B-2', 1)
+        ('54486a9a94', 'A-3', 1)
+        ('cb0960eb4e', 'B-3', 1)
+        ('da3ec0df59', 'A-2', 1)
+        ('e32c1b412b', 'A-1', 1)
 
         # Same as earlier example, but showing complete tickets.
         list(sampler(['B-1', 'B-2', 'B-3'],
                      seed=31415,
                      print_items=True))
         ==>
-        ('209a9f6594', 'B-1', 1)
-        ('5ee90a669e', 'B-2', 1)
-        ('b1d8c28550', 'B-3', 1)
+        ('019cc32266', 'B-1', 1)
+        ('3e3ceabc2e', 'B-2', 1)
+        ('cb0960eb4e', 'B-3', 1)
 
         # Same as earlier example, but sampling with replacement.
         list(sampler(['A-1', 'A-2', 'A-3',
@@ -432,7 +432,6 @@ def sampler(id_list,
         ('e08d22b5cf', 'A-2', 5)
         ('e18947e4d9', 'B-1', 4)
 
---
         # Same as earlier example, but sampling with replacement.
         list(sampler(['B-1', 'B-2', 'B-3'],
                      seed=31415,
@@ -440,22 +439,22 @@ def sampler(id_list,
                      take=16,
                      print_items=True))
         ==>
-        ('209a9f6594', 'B-1', 1)
-        ('5ee90a669e', 'B-2', 1)
-        ('8f0c665c4d', 'B-1', 2)
-        ('92aa5399e1', 'B-2', 2)
-        ('b1d8c28550', 'B-3', 1)
-        ('c8452c3bbb', 'B-2', 3)
-        ('caa8e0b0a4', 'B-2', 4)
-        ('d627dddead', 'B-2', 5)
-        ('d75e31e7f6', 'B-1', 3)
-        ('dc13dd0827', 'B-3', 2)
-        ('e18947e4d9', 'B-1', 4)
-        ('e1d7781be1', 'B-3', 3)
-        ('e21f048042', 'B-3', 4)
-        ('ebed8ea663', 'B-2', 6)
-        ('f14230655d', 'B-3', 5)
-        ('f2afec67fe', 'B-3', 6)
+        ('019cc32266', 'B-1', 1)
+        ('3e3ceabc2e', 'B-2', 1)
+        ('74d8d280ca', 'B-1', 2)
+        ('cb0960eb4e', 'B-3', 1)
+        ('d0dcfaf6c1', 'B-2', 2)
+        ('e22b1d4f70', 'B-2', 3)
+        ('e746140e41', 'B-2', 4)
+        ('ea984d193f', 'B-1', 3)
+        ('f47d565b55', 'B-1', 4)
+        ('f8111e3726', 'B-3', 2)
+        ('f918571eeb', 'B-1', 5)
+        ('f969d4e068', 'B-3', 3)
+        ('fbbc6731cd', 'B-1', 6)
+        ('fcc9232c9a', 'B-1', 7)
+        ('fd926e92b7', 'B-1', 8)
+        ('fdf9ad2fdc', 'B-3', 4)
 
         # show ticket sequence for a single object
         list(sampler(['B-1'],
@@ -464,22 +463,22 @@ def sampler(id_list,
                      take=16,
                     print_items=True))
         ==>
-        ('209a9f6594', 'B-1', 1)
-        ('8f0c665c4d', 'B-1', 2)
-        ('d75e31e7f6', 'B-1', 3)
-        ('e18947e4d9', 'B-1', 4)
-        ('fa1b2102f7', 'B-1', 5)
-        ('fc2d94ccc0', 'B-1', 6)
-        ('fe2ed840ee', 'B-1', 7)
-        ('fe55dc4fec', 'B-1', 8)
-        ('ff9698db68', 'B-1', 9)
-        ('ff9e896e8d', 'B-1', 10)
-        ('ffaa0f9834', 'B-1', 11)
-        ('ffcd39533d', 'B-1', 12)
-        ('ffd981a8e0', 'B-1', 13)
-        ('fffe8a89ba', 'B-1', 14)
-        ('ffff92a180', 'B-1', 15)
-        ('(f*5)d6feefd1d9', 'B-1', 16)
+        ('019cc32266', 'B-1', 1)
+        ('74d8d280ca', 'B-1', 2)
+        ('ea984d193f', 'B-1', 3)
+        ('f47d565b55', 'B-1', 4)
+        ('f918571eeb', 'B-1', 5)
+        ('fbbc6731cd', 'B-1', 6)
+        ('fcc9232c9a', 'B-1', 7)
+        ('fd926e92b7', 'B-1', 8)
+        ('ffeb6ffd93', 'B-1', 9)
+        ('fffc067e62', 'B-1', 10)
+        ('fffc5292f1', 'B-1', 11)
+        ('fffe62fcee', 'B-1', 12)
+        ('ffff3ad957', 'B-1', 13)
+        ('ffff7e468b', 'B-1', 14)
+        ('(f*5)4325440fa6', 'B-1', 15)
+        ('(f*5)e7a0cfd4b7', 'B-1', 16)
        """
 
     heap = []
