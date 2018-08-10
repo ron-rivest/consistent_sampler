@@ -129,11 +129,11 @@ subcollection, and obtain a result equivalent to working with the
 first subcollection only.
 
 These ideas are not so new.  They are similar to Python's "decorate
-and sort" paradigm, for example.
-(GIVE MORE CITATIONS HERE.)
+and sort" paradigm, for example.  See also the references to
+consistent samping in https://arxiv.org/abs/1612.01041.
 
 The main (only) interface routine is the routine "sampler";
-the other routines are for internal use only.
+other routines are for internal use only.
 
 """
 
@@ -167,9 +167,13 @@ Ticket = collections.namedtuple("Ticket",
 
 def f_format(x):
     """
-    Return string "(f*12)abc" if x starts with 12 fs.
+    Return string "(f*12)abc" if x starts with 12 fs and
+    then follows with "abc".  
 
-    Used to compress output of ticket_number in tktstr.
+    Used to compress output of ticket_number in tktstr by
+    using count of number of initial fs instead of giving
+    them all explicitly, and by truncating "mantissa" (portion
+    after initial segment of fs).
     """
 
     mantissa_display_length = 10
@@ -266,7 +270,7 @@ def hexfrac_uniform_larger(x, prng):
 def first_ticket(id, seed):
     "Return initial (generation 1) ticket for the given id."
 
-    seed_id = sha256(seed)+str(id)
+    seed_id = sha256(seed)+":id:"+str(id)
     prng = sha256_prng(seed_id)
     return Ticket(hexfrac_uniform(prng), id, 1)
 
@@ -285,10 +289,9 @@ def next_ticket(ticket, seed):
     """
 
     old_ticket_number, id, generation = ticket
-    seed_hash = sha256(seed)
-    seed_id_hash = sha256(seed_hash + str(id))
-    seed_id_gen_hash = sha256(seed_id_hash + str(generation))
-    prng = sha256_prng(seed_id_gen_hash)
+    seed_id = sha256(seed)+":id:"+str(id)
+    seed_id_gen = sha256(seed_id) + ":gen:" + str(generation)
+    prng = sha256_prng(seed_id_gen)
     new_ticket_number = hexfrac_uniform_larger(old_ticket_number, prng)
     return Ticket(new_ticket_number, id, generation+1)
 
@@ -380,12 +383,12 @@ def sampler(id_list,
                       ids_only=True,
                       print_items=True))
         ==>
+        B-1
         B-2
         A-2
-        B-1
-        A-3
         B-3
         A-1
+        A-3
 
         # Take a sample of size 3.
         # (Note consistency with previous example.)
@@ -395,9 +398,9 @@ def sampler(id_list,
                       ids_only=True,
                       print_items=True))
         ==>
+        B-1
         B-2
         A-2
-        B-1
 
         # Note B's are in same relative order as within above output.
         list(sampler(['B-1', 'B-2', 'B-3'],
@@ -405,8 +408,8 @@ def sampler(id_list,
                  ids_only=True,
                  print_items=True))
         ==>
-        B-2
         B-1
+        B-2
         B-3
 
         # Same as earlier example, but printing complete tickets.
@@ -415,23 +418,21 @@ def sampler(id_list,
                      seed=31415,
                      print_items=True))
         ==>
-        ('2e9d5f9aba', 'B-2', 1)
-        ('4a2ffd5ea0', 'A-2', 1)
-        ('618a9e15e1', 'B-1', 1)
-        ('85546d4082', 'A-3', 1)
-        ('c8af1c356e', 'B-3', 1)
-        ('d6283d2067', 'A-1', 1)
-
+        ('209a9f6594', 'B-1', 1)
+        ('5ee90a669e', 'B-2', 1)
+        ('710ef2b7e8', 'A-2', 1)
+        ('b1d8c28550', 'B-3', 1)
+        ('f45c80bcba', 'A-1', 1)
+        ('fa2132c79a', 'A-3', 1)
 
         # Same as earlier example, but showing complete tickets.
         list(sampler(['B-1', 'B-2', 'B-3'],
                      seed=31415,
                      print_items=True))
         ==>
-        ('2e9d5f9aba', 'B-2', 1)
-        ('618a9e15e1', 'B-1', 1)
-        ('c8af1c356e', 'B-3', 1)
-
+        ('209a9f6594', 'B-1', 1)
+        ('5ee90a669e', 'B-2', 1)
+        ('b1d8c28550', 'B-3', 1)
 
         # Same as earlier example, but sampling with replacement.
         list(sampler(['A-1', 'A-2', 'A-3',
@@ -441,23 +442,24 @@ def sampler(id_list,
                      take=16,
                      print_items=True))
         ==>
-        ('2e9d5f9aba', 'B-2', 1)
-        ('4a2ffd5ea0', 'A-2', 1)
-        ('618a9e15e1', 'B-1', 1)
-        ('85546d4082', 'A-3', 1)
-        ('b57805a444', 'A-2', 2)
-        ('b5c88ebfad', 'A-3', 2)
-        ('c8af1c356e', 'B-3', 1)
-        ('cb72231f6e', 'A-3', 3)
-        ('cdc434ff90', 'A-3', 4)
-        ('d6283d2067', 'A-1', 1)
-        ('d94b03c2de', 'A-3', 5)
-        ('db159e73ee', 'B-1', 2)
-        ('dc69f4df37', 'B-1', 3)
-        ('dc9fbf311a', 'A-3', 6)
-        ('e0796a2844', 'A-1', 2)
-        ('e2d51fea5c', 'A-2', 3)
+        ('209a9f6594', 'B-1', 1)
+        ('5ee90a669e', 'B-2', 1)
+        ('710ef2b7e8', 'A-2', 1)
+        ('8704614710', 'A-2', 2)
+        ('8f0c665c4d', 'B-1', 2)
+        ('92aa5399e1', 'B-2', 2)
+        ('b1d8c28550', 'B-3', 1)
+        ('c8452c3bbb', 'B-2', 3)
+        ('caa8e0b0a4', 'B-2', 4)
+        ('cc06f5af2f', 'A-2', 3)
+        ('d627dddead', 'B-2', 5)
+        ('d75e31e7f6', 'B-1', 3)
+        ('daa7724be1', 'A-2', 4)
+        ('dc13dd0827', 'B-3', 2)
+        ('e08d22b5cf', 'A-2', 5)
+        ('e18947e4d9', 'B-1', 4)
 
+--
         # Same as earlier example, but sampling with replacement.
         list(sampler(['B-1', 'B-2', 'B-3'],
                      seed=31415,
@@ -465,22 +467,22 @@ def sampler(id_list,
                      take=16,
                      print_items=True))
         ==>
-        ('2e9d5f9aba', 'B-2', 1)
-        ('618a9e15e1', 'B-1', 1)
-        ('c8af1c356e', 'B-3', 1)
-        ('db159e73ee', 'B-1', 2)
-        ('dc69f4df37', 'B-1', 3)
-        ('ec0da05ac1', 'B-1', 4)
-        ('ecad7358fb', 'B-2', 2)
-        ('eee5b7ecc2', 'B-1', 5)
-        ('efb9d6be51', 'B-2', 3)
-        ('f64d1a8269', 'B-2', 4)
-        ('f94a77d5a5', 'B-3', 2)
-        ('fb1bea06a0', 'B-3', 3)
-        ('fd5d5ee5ac', 'B-1', 6)
-        ('fea656e942', 'B-1', 7)
-        ('feb3b3f35d', 'B-3', 4)
-        ('fedfc9a1a8', 'B-3', 5)
+        ('209a9f6594', 'B-1', 1)
+        ('5ee90a669e', 'B-2', 1)
+        ('8f0c665c4d', 'B-1', 2)
+        ('92aa5399e1', 'B-2', 2)
+        ('b1d8c28550', 'B-3', 1)
+        ('c8452c3bbb', 'B-2', 3)
+        ('caa8e0b0a4', 'B-2', 4)
+        ('d627dddead', 'B-2', 5)
+        ('d75e31e7f6', 'B-1', 3)
+        ('dc13dd0827', 'B-3', 2)
+        ('e18947e4d9', 'B-1', 4)
+        ('e1d7781be1', 'B-3', 3)
+        ('e21f048042', 'B-3', 4)
+        ('ebed8ea663', 'B-2', 6)
+        ('f14230655d', 'B-3', 5)
+        ('f2afec67fe', 'B-3', 6)
 
         # show ticket sequence for a single object
         list(sampler(['B-1'],
@@ -489,22 +491,22 @@ def sampler(id_list,
                      take=16,
                     print_items=True))
         ==>
-        ('618a9e15e1', 'B-1', 1)
-        ('db159e73ee', 'B-1', 2)
-        ('dc69f4df37', 'B-1', 3)
-        ('ec0da05ac1', 'B-1', 4)
-        ('eee5b7ecc2', 'B-1', 5)
-        ('fd5d5ee5ac', 'B-1', 6)
-        ('fea656e942', 'B-1', 7)
-        ('ffaf968a78', 'B-1', 8)
-        ('ffb7a4c2db', 'B-1', 9)
-        ('ffebd93ada', 'B-1', 10)
-        ('fffe2caeda', 'B-1', 11)
-        ('ffffa06cce', 'B-1', 12)
-        ('ffffb24892', 'B-1', 13)
-        ('(f*5)cde8184dd4', 'B-1', 14)
-        ('(f*5)d747c7fe1e', 'B-1', 15)
-        ('(f*5)e690b68344', 'B-1', 16)
+        ('209a9f6594', 'B-1', 1)
+        ('8f0c665c4d', 'B-1', 2)
+        ('d75e31e7f6', 'B-1', 3)
+        ('e18947e4d9', 'B-1', 4)
+        ('fa1b2102f7', 'B-1', 5)
+        ('fc2d94ccc0', 'B-1', 6)
+        ('fe2ed840ee', 'B-1', 7)
+        ('fe55dc4fec', 'B-1', 8)
+        ('ff9698db68', 'B-1', 9)
+        ('ff9e896e8d', 'B-1', 10)
+        ('ffaa0f9834', 'B-1', 11)
+        ('ffcd39533d', 'B-1', 12)
+        ('ffd981a8e0', 'B-1', 13)
+        ('fffe8a89ba', 'B-1', 14)
+        ('ffff92a180', 'B-1', 15)
+        ('(f*5)d6feefd1d9', 'B-1', 16)
        """
 
     heap = []
