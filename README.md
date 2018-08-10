@@ -8,7 +8,11 @@ The sampling is *consistent* since it consistently favors elements with small as
 random numbers; if two sets S and T have substantial overlap, then their samples of a given 
 size will also have substantial overlap (for the same random seed).
 
-This routine is intended for use in election audits, but is easily usable for other applications.
+This routine is intended for use in election audits,
+where the objects being sampled are ballots, but this procedure
+is for general use.  For a similar election audit sampling method,
+see Stark's election audit tools:
+   https://www.stat.berkeley.edu/~stark/Vote/auditTools.htm
 
 This routine takes as input a finite collection of distinct object ids, a random seed, and
 some other parameters.  The sampling may be "with replacement" or "without replacement".
