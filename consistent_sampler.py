@@ -211,18 +211,6 @@ def sha256(hash_input):
                   .hexdigest()
 
 
-def sha256_prng(seed):
-    """
-    Generator for SHA256 in counter mode.
-    """
-
-    seed_hash = sha256(seed)
-    counter = 0
-    while True:
-        yield sha256(seed_hash+str(counter))
-        counter += 1
-
-
 def hexfrac_next(x):
     """
     With input a hex string x (to be interpreted as a fraction
@@ -284,8 +272,7 @@ def draw_with_replacement(heap):
     """
 
     ticket = heapq.heappop(heap)
-    replacement_ticket = next_ticket(ticket)
-    heapq.heappush(heap, replacement_ticket)
+    heapq.heappush(heap, next_ticket(ticket))
     return ticket
 
 
@@ -486,10 +473,9 @@ def sampler(id_list,
         heapq.heappush(heap, first_ticket(id, seed))
     count = 0
     while len(heap) > 0:
+        ticket = draw_without_replacement(heap)
         if with_replacement:
-            ticket = draw_with_replacement(heap)
-        else:
-            ticket = draw_without_replacement(heap)
+            heapq.heappush(heap, next_ticket(ticket))
         count += 1
         if drop < count <= drop + take:
             if ids_only:
