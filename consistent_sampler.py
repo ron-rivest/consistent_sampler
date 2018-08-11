@@ -271,22 +271,22 @@ def next_ticket(ticket):
 
 def draw_without_replacement(heap):
     """
-    Return ticket drawn and new heap.
+    Return ticket drawn.
     """
 
     ticket = heapq.heappop(heap)
-    return ticket, heap
+    return ticket
 
 
 def draw_with_replacement(heap):
     """
-    Return ticket drawn and new heap.
+    Return ticket drawn.
     """
 
     ticket = heapq.heappop(heap)
     replacement_ticket = next_ticket(ticket)
     heapq.heappush(heap, replacement_ticket)
-    return ticket, heap
+    return ticket
 
 
 def sampler(id_list,
@@ -487,9 +487,9 @@ def sampler(id_list,
     count = 0
     while len(heap) > 0:
         if with_replacement:
-            ticket, heap = draw_with_replacement(heap)
+            ticket = draw_with_replacement(heap)
         else:
-            ticket, heap = draw_without_replacement(heap)
+            ticket = draw_without_replacement(heap)
         count += 1
         if drop < count <= drop + take:
             if ids_only:
