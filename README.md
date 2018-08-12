@@ -37,7 +37,7 @@ yields a generator g whose output can be printed:
    
 whichi produces:
 
-    ['B-1', 'B-3', 'B-2', 'A-1']
+    ['B-2', 'B-1', 'A-3', 'B-3']
     
 Consistent sampling is not a new idea, see for example
 https://arxiv.org/abs/1612.01041
