@@ -1,13 +1,11 @@
 # test_consistent_sampler.py
 # by Ronald L. Rivest
-# August 9, 2018
+# August 11, 2018
 # python 3
 
 """
 Test routines for consistent_sampler.py
 """
-
-import numpy as np
 
 from consistent_sampler import *
 
@@ -71,29 +69,19 @@ def test_sampler():
                  print_items=True))
 
 
-def test_hexfrac():
-    import hashlib
-    counter = 0
+def test_fraction():
 
-    def sha256_prng():
-        counter = 0
-        while True:
-            counter += 1
-            yield hashlib.sha256(str(counter).encode()).hexdigest()
-
-    prng = sha256_prng()
-
-    print("First random fraction in hex.")
-    x = sha256(str(np.random.random))
+    print("First random fraction.")
+    x = first_fraction("C-14", 314159)
     print(x)
 
-    print("20 invocations of 'hexfrac_next':")
+    print("20 invocations of 'next_fraction':")
     for i in range(20):
-        x = hexfrac_next(x)
+        x = next_fraction(x)
         print("-->", x)
 
 
 if __name__ == '__main__':
-    test_hexfrac()
+    test_fraction()
     test_sampler()
 

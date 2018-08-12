@@ -1,6 +1,6 @@
 # consistent_sampler.py
 # by Ronald L. Rivest
-# August 9, 2018
+# August 11, 2018
 # python3
 
 """Routines to provide random samples from finite collections of
@@ -16,7 +16,7 @@ Very similar to implementation of same ideas by Neal McBurnett:
 Differences include:
    -- use of a random seed
    -- use of high-precision numbers represented as arbtrary-precision
-      hexadecimal fractions between 0 and 1
+      decimal fractions between 0 and 1
       (Thanks to Philip Stark for suggesting string representations.)
    -- ticket numbers depend on generation number,
       and are independent of ticket numbers computed for other
@@ -30,7 +30,7 @@ For a similar sampling method, see Stark's audit tools:
    https://www.stat.berkeley.edu/~stark/Vote/auditTools.htm
 
 The consistent sampling method associates a pseudorandom number (a
-"ticket number") with each object, then sampling objects in order of
+"ticket number") with each object, then samples objects in order of
 increasing ticket number.  The ticket numbers are real numbers from
 the interval (0,1).
 
@@ -41,7 +41,8 @@ collection of objects being sampled.
 The ticket number of an object is computed pseudo-randomly based on:
     a random seed,
     the "id" of the object, and
-    the "generation" of the ticket (used when sampling with replacement)
+    (if this is a replacement operation for sampling with replacement),
+    the previous ticket number of the ticket being replacement.
 
 The random seed is an arbitrary string, used as an input to the
 pseudorandom ticket number generation routine.  The seed is the only
@@ -51,14 +52,14 @@ The "id" of an object is its identifier or name.  We assume that each
 object has a unique id.  The id may be a string, a tuple of strings,
 or any printable object.
 
+Ticket numbers are real numbers in the range (0, 1).
+
 The first ticket number given to an object is its "generation 1"
 ticket number.  If we are using sampling without replacement, then
 that number is the only ticket number it will receive.  If we are
 sampling with replacement, then the object may receive ticket numbers
 for generations 2, 3, ... as needed.  For a given object, its ticket
 numbers will increase with the generation number.
-
-Ticket numbers are real numbers in the range (0, 1).
 
 Let TktNo(id, gen) denote the ticket number of the object with given
 id and generation, where id is an object id and gen a positive
@@ -141,6 +142,12 @@ import collections
 import hashlib
 import heapq
 
+# GLOBAL CONSTANTS
+
+# mantissa_length is the number of digits of precision the the result of
+# each call to sha256
+MANTISSA_LENGTH = 64  
+
 """
 A Ticket is a record referring to one object.
 
@@ -165,70 +172,67 @@ Ticket = collections.namedtuple("Ticket",
                                  'generation'])
 
 
-def f_format(x):
+def trim(x):
     """
-    Return string "(f*12)abc" if x starts with 12 fs and
-    then follows with "abc".  
-
-    Used to compress output of ticket_number in tktstr by
-    using count of number of initial fs instead of giving
-    them all explicitly, and by truncating "mantissa" (portion
-    after initial segment of fs).
+    Return compressed form of x, giving only 12 significant
+    digits after initial sequence of 9s ends.
     """
 
-    mantissa_display_length = 10
-    min_fs_threshold = 5
+    mantissa_display_length = 12
     x0 = (x+'0').lower()
-    num_fs = min([i for i in range(len(x0)) if x0[i] < 'f'])
-    if num_fs >= min_fs_threshold:
-        rest = x[num_fs:]
-        rest = rest[:mantissa_display_length]
-        return "(f*{}){}".format(num_fs, rest)
-    else:
-        x = x[:mantissa_display_length]
-        return x
+    num_9s = min([i for i in range(len(x0)) if x0[i] < '9'])
+    return x[:num_9s+mantissa_display_length]
 
 
 def tktstr(ticket):
     """
     Return short printable form of a ticket.
 
-    Note: this printed form does not contain all of the
-    significant digits of the ticket number.
+    Note: this printed form contain only the first
+    twelve significant digits of the ticket number.
     """
 
-    return (f_format(ticket.ticket_number),
+    return (trim(ticket.ticket_number),
             ticket.id,
             ticket.generation)
 
 
 def sha256(hash_input):
     """
-    Use basic SHA256 cryptographic hash; return 64-char hex hash of input.
+    Use basic SHA256 cryptographic hash; return 64-char decimal hash of input.
     """
 
-    return hashlib.sha256(str(hash_input).encode('utf-8')) \
-                  .hexdigest()
+    x = hashlib.sha256(str(hash_input).encode('utf-8')).hexdigest()
+    return "{:064d}".format(int(x, 16) % (10 ** MANTISSA_LENGTH))
 
 
-def hexfrac_next(x):
+def first_fraction(id, seed):
     """
-    With input a hex string x (to be interpreted as a fraction
-    between 0 and 1), return a hex string that represents a
-    fraction y uniformly chosen in the interval (x, 1).
-    The last 64 hex digits of the result are output of sha256
+    Return initial fraction for given id and seed.
+    """
+    
+    return sha256(sha256(seed)+str(id))
+
+
+def next_fraction(x):
+    """
+    With input a string x (interpreted with leading point as 
+    a fraction between 0 and 1), return a string that 
+    represents a fraction y uniformly chosen in the interval (x, 1).
+    The last 64 digits of the result are output of sha256
     on value x.
     """
 
+    max_digit = '9'     # since this is decimal
     x = x.lower()       # just to be sure
     x0 = x+'0'          # in case x is all fs
-    first_non_f_position = min([i for i in range(len(x0))
-                                if x0[i] < 'f'])
+    first_non_max_digit_position = \
+        min([i for i in range(len(x0)) if x0[i] < max_digit])
     y = ''
     i = 0
     while y <= x0:
         i = i + 1
-        y = x0[:first_non_f_position]
+        y = x0[:first_non_max_digit_position]
         y = y + sha256(x + str(i))
     return y
 
@@ -236,8 +240,7 @@ def hexfrac_next(x):
 def first_ticket(id, seed):
     "Return initial (generation 1) ticket for the given id."
 
-    seed_id = sha256(seed)+":id:"+str(id)
-    return Ticket(sha256(seed_id), id, 1)
+    return Ticket(first_fraction(id, seed), id, 1)
 
 
 def next_ticket(ticket):
@@ -252,9 +255,9 @@ def next_ticket(ticket):
     generation of the input ticket.  The id is the same.
     """
 
-    old_ticket_number, id, generation = ticket
-    new_ticket_number = hexfrac_next(old_ticket_number)
-    return Ticket(new_ticket_number, id, generation+1)
+    return Ticket(next_fraction(ticket.ticket_number),
+                  ticket.id,
+                  ticket.generation+1)
 
 
 def draw_without_replacement(heap):
@@ -301,7 +304,7 @@ def sampler(id_list,
                                  (ticket_number, id, generation)
                              where
                                 ticket_number is a real number
-                                    (as a hex string),
+                                    (with leading point)
                                 id is an id from id_list, and
                                 generation is the number of times this id has
                                     been sampled so far
