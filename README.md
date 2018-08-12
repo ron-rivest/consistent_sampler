@@ -28,7 +28,8 @@ generator, capable of producing an infinitely long stream of output object ids.
 
 As a small example of sampling without replacement:
 
-    g = sampler(['A-1', 'A-2', 'B-1', 'B-2', 'B-3'], with_replacement=False, take=4, seed=314159)
+    g = sampler(['A-1', 'A-2', 'A-3', 'B-1', 'B-2', 'B-3'], 
+                with_replacement=False, take=4, seed=314159)
   
 yields a generator g whose output can be printed:
 
@@ -36,7 +37,7 @@ yields a generator g whose output can be printed:
    
 whichi produces:
 
-    ['B-3', 'A-2', 'B-1', 'B-2']
+    ['B-1', 'B-3', 'B-2', 'A-1']
     
 Consistent sampling is not a new idea, see for example
 https://arxiv.org/abs/1612.01041
@@ -47,7 +48,7 @@ sampling to sampling by replacement: when an item is sampled and then replaced
 in the set of items being sampled, it is given a new random number drawn uniformly
 from the set of numbers in (0, 1) larger than its previous associated number.
 To implement this efficiently and portably, we represent a number in (0, 1) as
-a variable-length hexadecimal string with the point assumed at the left-end. 
+a variable-length decimal string with the point assumed at the left-end. 
 
 For our applications, one big advantage of consistent sampling is the following.
 If each county collects cast ballots separately, then they can order their own ballots
