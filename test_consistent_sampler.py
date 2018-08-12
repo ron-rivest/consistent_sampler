@@ -57,6 +57,8 @@ def test_sampler():
                  ids_only=True,
                  print_items=True))
     print("\n    Example X4: Same as example X1, but showing tickets in sorted order.")
+    print("    Each ticket has: ticket_number, id, and generation.")
+
     print("""
     list(sampler(['A-1', 'A-2', 'A-3',
                   'B-1', 'B-2', 'B-3'],
@@ -67,7 +69,7 @@ def test_sampler():
                   'B-1', 'B-2', 'B-3'],
                  seed=314159,
                  print_items=True))
-    print("\n    Example X5: Same as example X2, but showing in sorted order.")
+    print("\n    Example X5: Same as example X2, but showing tickets in sorted order.")
     print("""
     list(sampler(['B-1', 'B-2', 'B-3'],
                  seed=314159,
@@ -92,6 +94,7 @@ def test_sampler():
                  take=16,
                  print_items=True))
     print("\n    Example X7: Drawing sample of size 16 with replacement from set of size 3.")
+    print("    Note consistency with example X6.")
     print("""
     list(sampler(['B-1', 'B-2', 'B-3'],
                  seed=314159,
@@ -105,6 +108,7 @@ def test_sampler():
                  take=16,
                  print_items=True))
     print("\n    Example X8: Drawing sample of size 16 with replacement from set of size 1.")
+    print("    Note consistency with examplex X6 and X7.")
     print("""
     list(sampler(['B-1'],
                  seed=314159,
