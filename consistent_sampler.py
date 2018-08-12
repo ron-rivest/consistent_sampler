@@ -34,6 +34,10 @@ The consistent sampling method associates a pseudorandom number (a
 increasing ticket number.  The ticket numbers are real numbers from
 the interval (0,1).
 
+(The ticket numbers were originally coded up as hexadecimal strings,
+but they are now represented as decimal strings for possible improved
+clarity.)
+
 If used for sampling with replacement, then once an object is picked
 it is given a new but larger ticket number, and replaced in the
 collection of objects being sampled.
@@ -144,9 +148,10 @@ import heapq
 
 # GLOBAL CONSTANTS
 
-# mantissa_length is the number of digits of precision the the result of
+# mantissa_length is the number of digits of precision in the result of
 # each call to sha256
-MANTISSA_LENGTH = 64  
+
+MANTISSA_LENGTH = 64
 
 """
 A Ticket is a record referring to one object.
@@ -172,27 +177,31 @@ Ticket = collections.namedtuple("Ticket",
                                  'generation'])
 
 
-def trim(x):
+def trim(x, mantissa_display_length=12):
     """
     Return compressed form of x, giving only 12 significant
-    digits after initial sequence of 9s ends.
+    digits after initial sequence of 9s ends.  Providing
+    a different value for mantissa_display_length enables one
+    to vary the precision shown.  Note that is truncated, not
+    rounded.
     """
 
-    mantissa_display_length = 12
     x0 = (x+'0').lower()
     num_9s = min([i for i in range(len(x0)) if x0[i] < '9'])
     return x[:num_9s+mantissa_display_length]
 
 
-def tktstr(ticket):
+def tktstr(ticket, mantissa_display_length=12):
     """
     Return short printable form of a ticket.
 
     Note: this printed form contain only the first
     twelve significant digits of the ticket number.
+    Changing mantissa_display_length allows for variable
+    precision.
     """
 
-    return (trim(ticket.ticket_number),
+    return (trim(ticket.ticket_number, mantissa_display_length),
             ticket.id,
             ticket.generation)
 
@@ -210,14 +219,14 @@ def first_fraction(id, seed):
     """
     Return initial pseudo-random fraction for given id and seed.
     """
-    
+
     return sha256(sha256(seed)+str(id))
 
 
 def next_fraction(x):
     """
-    With input a string x (interpreted with leading point as 
-    a fraction between 0 and 1), return a string that 
+    With input a string x (interpreted with leading point as
+    a fraction between 0 and 1), return a string that
     represents a fraction y uniformly chosen in the interval (x, 1).
     The last 64 digits of the result are output of sha256
     on value x.
@@ -225,7 +234,7 @@ def next_fraction(x):
 
     max_digit = '9'     # since this is decimal
     x = x.lower()       # just to be sure
-    x0 = x+'0'          # in case x is all fs
+    x0 = x+'0'          # in case x is all 9s
     first_non_max_digit_position = \
         min([i for i in range(len(x0)) if x0[i] < max_digit])
     y = ''
@@ -334,143 +343,152 @@ def sampler(id_list,
                              the generator can be run forever, and a given
                              id may be sampled many times.
 
-    Examples (see routine test_sampler in test_consistent_sampler.py for
-    corresponding code):
+   Examples (see routine test_sampler in test_consistent_sampler.py for
+   corresponding code):
 
         # Note "list" is to cause generator to execute, thus
         # ensuring printout of items selected.
         # No "take" options, so this shuffles input id_list
-        list(sampler(['A-1', 'A-2', 'A-3',
-                      'B-1', 'B-2', 'B-3'],
-                      seed=31415,
-                      ids_only=True,
-                      print_items=True))
-        ==>
-        B-1
-        B-3
-        B-2
-        A-1
-        A-2
-        A-3
 
-        # Take a sample of size 3.
-        # (Note consistency with previous example.)
-        list(sampler(['A-1', 'A-2', 'A-3',
-                      'B-1', 'B-2', 'B-3'],
-                      seed=31415,
-                      ids_only=True,
-                      print_items=True))
-        ==>
-        B-1
-        B-3
-        B-2
+   Example X1: Shuffling a list of size six.
 
-        # Note B's are in same relative order as within above output.
-        list(sampler(['B-1', 'B-2', 'B-3'],
-                 seed=31415,
+    list(sampler(['A-1', 'A-2', 'A-3',
+                  'B-1', 'B-2', 'B-3'],
+                 seed=314159,
                  ids_only=True,
                  print_items=True))
-        ==>
-        B-1
-        B-3
-        B-2
+    -->
+    B-2
+    B-1
+    A-3
+    B-3
+    A-2
+    A-1
 
-        # Same as earlier example, but printing complete tickets.
-        list(sampler(['A-1', 'A-2', 'A-3',
-                      'B-1', 'B-2', 'B-3'],
-                     seed=31415,
-                     print_items=True))
-        ==>
-        ('067332842388', 'B-1', 1)
-        ('176837118841', 'B-3', 1)
-        ('375308191656', 'B-2', 1)
-        ('618091109616', 'A-1', 1)
-        ('878287260903', 'A-2', 1)
-        ('9143300586807', 'A-3', 1)
+    Example X2: Taking sample of size 3 (prefix of shuffled list).
 
-        # Same as earlier example, but showing complete tickets.
-        list(sampler(['B-1', 'B-2', 'B-3'],
-                     seed=31415,
-                     print_items=True))
-        ==>
-        ('067332842388', 'B-1', 1)
-        ('176837118841', 'B-3', 1)
-        ('375308191656', 'B-2', 1)
+    list(sampler(['A-1', 'A-2', 'A-3',
+                  'B-1', 'B-2', 'B-3'],
+                 seed=314159,
+                 ids_only=True,
+                 take=3,
+                 print_items=True))
+    -->
+    B-2
+    B-1
+    A-3
 
-        # Same as earlier example, but sampling with replacement.
-        list(sampler(['A-1', 'A-2', 'A-3',
-                      'B-1', 'B-2', 'B-3'],
-                     seed=31415,
-                     with_replacement=True,
-                     take=16,
-                     print_items=True))
-        ==>
-        ('067332842388', 'B-1', 1)
-        ('176837118841', 'B-3', 1)
-        ('205529431301', 'B-1', 2)
-        ('375308191656', 'B-2', 1)
-        ('388342333142', 'B-2', 2)
-        ('618091109616', 'A-1', 1)
-        ('722069881702', 'B-1', 3)
-        ('745689662055', 'B-2', 3)
-        ('816959111223', 'B-2', 4)
-        ('854733282692', 'B-3', 2)
-        ('861461336754', 'B-1', 4)
-        ('878287260903', 'A-2', 1)
-        ('9143300586807', 'A-3', 1)
-        ('9219667168883', 'A-3', 2)
-        ('9339102507866', 'B-2', 5)
-        ('9469962989134', 'A-1', 2)
+    Example X3: Demonstrating consistency: shuffling the B items only.
 
-        # Same as earlier example, but sampling with replacement.
-        list(sampler(['B-1', 'B-2', 'B-3'],
-                     seed=31415,
-                     with_replacement=True,
-                     take=16,
-                     print_items=True))
-        ==>
---
-        ('067332842388', 'B-1', 1)
-        ('176837118841', 'B-3', 1)
-        ('205529431301', 'B-1', 2)
-        ('375308191656', 'B-2', 1)
-        ('388342333142', 'B-2', 2)
-        ('722069881702', 'B-1', 3)
-        ('745689662055', 'B-2', 3)
-        ('816959111223', 'B-2', 4)
-        ('854733282692', 'B-3', 2)
-        ('861461336754', 'B-1', 4)
-        ('9339102507866', 'B-2', 5)
-        ('9485319610594', 'B-1', 5)
-        ('9506332173620', 'B-3', 3)
-        ('9506818734911', 'B-3', 4)
-        ('9826728807334', 'B-2', 6)
-        ('9898249900886', 'B-2', 7)
+    list(sampler(['B-1', 'B-2', 'B-3'],
+                 seed=314159,
+                 ids_only=True,
+                 print_items=True))
+    -->
+    B-2
+    B-1
+    B-3
 
-        # show ticket sequence for a single object
-        list(sampler(['B-1'],
-                     seed=31415,
-                     with_replacement=True,
-                     take=16,
-                    print_items=True))
-        ==>
-        ('067332842388', 'B-1', 1)
-        ('205529431301', 'B-1', 2)
-        ('722069881702', 'B-1', 3)
-        ('861461336754', 'B-1', 4)
-        ('9485319610594', 'B-1', 5)
-        ('99074442980789', 'B-1', 6)
-        ('99610003356740', 'B-1', 7)
-        ('99694888558155', 'B-1', 8)
-        ('999065563876137', 'B-1', 9)
-        ('999853322348881', 'B-1', 10)
-        ('9999364509158939', 'B-1', 11)
-        ('9999706089235838', 'B-1', 12)
-        ('9999749615224401', 'B-1', 13)
-        ('9999807056175893', 'B-1', 14)
-        ('9999867468722499', 'B-1', 15)
-        ('99999633626702741', 'B-1', 16)
-       """
+    Example X4: Same as example X1, but showing in sorted order.
+
+    list(sampler(['A-1', 'A-2', 'A-3',
+                  'B-1', 'B-2', 'B-3'],
+                 seed=314159,
+                 print_items=True))
+    -->
+    ('089223599782', 'B-2', 1)
+    ('151934837245', 'B-1', 1)
+    ('666460774632', 'A-3', 1)
+    ('879262989601', 'B-3', 1)
+    ('9609499084257', 'A-2', 1)
+    ('999042002673166', 'A-1', 1)
+
+    Example X5: Same as example X2, but showing in sorted order.
+
+    list(sampler(['B-1', 'B-2', 'B-3'],
+                 seed=314159,
+                 print_items=True))
+    -->
+    ('089223599782', 'B-2', 1)
+    ('151934837245', 'B-1', 1)
+    ('879262989601', 'B-3', 1)
+
+    Example X6: Drawing sample of size 16 with replacement from set of size 6.
+
+    list(sampler(['A-1', 'A-2', 'A-3',
+                  'B-1', 'B-2', 'B-3'],
+                 seed=314159,
+                 with_replacement=True,
+                 take=16,
+                 print_items=True))
+    -->
+    ('089223599782', 'B-2', 1)
+    ('151934837245', 'B-1', 1)
+    ('666460774632', 'A-3', 1)
+    ('790975071055', 'A-3', 2)
+    ('879262989601', 'B-3', 1)
+    ('9324937669517', 'B-3', 2)
+    ('9363683934438', 'A-3', 3)
+    ('9489426837652', 'B-1', 2)
+    ('9543989878027', 'A-3', 4)
+    ('9609499084257', 'A-2', 1)
+    ('9643763176012', 'B-3', 3)
+    ('9658303787286', 'B-1', 3)
+    ('9701109652719', 'A-3', 5)
+    ('9732895191569', 'B-1', 4)
+    ('9814549690077', 'A-2', 2)
+    ('9823887920981', 'A-2', 3)
+
+    Example X7: Drawing sample of size 16 with replacement from set of size 3.
+
+    list(sampler(['B-1', 'B-2', 'B-3'],
+                 seed=314159,
+                 with_replacement=True,
+                 take=16,
+                 print_items=True))
+    -->
+    ('089223599782', 'B-2', 1)
+    ('151934837245', 'B-1', 1)
+    ('879262989601', 'B-3', 1)
+    ('9324937669517', 'B-3', 2)
+    ('9489426837652', 'B-1', 2)
+    ('9643763176012', 'B-3', 3)
+    ('9658303787286', 'B-1', 3)
+    ('9732895191569', 'B-1', 4)
+    ('9835660403170', 'B-2', 2)
+    ('99213382806301', 'B-2', 3)
+    ('99250260876531', 'B-3', 4)
+    ('99681925352684', 'B-1', 5)
+    ('99866699297155', 'B-2', 4)
+    ('999300879037994', 'B-2', 5)
+    ('999385090656868', 'B-3', 5)
+    ('999723939087970', 'B-3', 6)
+
+    Example X8: Drawing sample of size 16 with replacement from set of size 1.
+
+    list(sampler(['B-1'],
+                 seed=314159,
+                 with_replacement=True,
+                 take=16,
+                 print_items=True))
+    -->
+    ('151934837245', 'B-1', 1)
+    ('9489426837652', 'B-1', 2)
+    ('9658303787286', 'B-1', 3)
+    ('9732895191569', 'B-1', 4)
+    ('99681925352684', 'B-1', 5)
+    ('9999468815066662', 'B-1', 6)
+    ('99999647444118229', 'B-1', 7)
+    ('99999687326092745', 'B-1', 8)
+    ('999999216061219859', 'B-1', 9)
+    ('999999368700648906', 'B-1', 10)
+    ('999999718667957190', 'B-1', 11)
+    ('9999999307064559743', 'B-1', 12)
+    ('9999999710281380686', 'B-1', 13)
+    ('9999999869065277368', 'B-1', 14)
+    ('99999999350099524136', 'B-1', 15)
+    ('99999999375793275795', 'B-1', 16)
+    """
 
     heap = []
     for id in id_list:
@@ -484,11 +502,11 @@ def sampler(id_list,
         if drop < count <= drop + take:
             if ids_only:
                 if print_items:
-                    print("    ", ticket.id)
+                    print("   ", ticket.id)
                 yield ticket.id
             else:
                 if print_items:
-                    print("    ", tktstr(ticket))
+                    print("   ", tktstr(ticket))
                 yield ticket
         elif count > drop+take:
             return
