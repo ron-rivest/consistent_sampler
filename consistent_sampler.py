@@ -172,48 +172,64 @@ Ticket = collections.namedtuple("Ticket",
 
 def trim(x, mantissa_display_length=12):
     """
-    Return compressed form of x, giving only 12 significant
-    digits after initial sequence of 9s ends.  Providing
-    a different value for mantissa_display_length enables one
-    to vary the precision shown.  Note that is truncated, not
+    Return compressed form of fraction x (string), 
+    giving only 12 significant digits after initial
+    sequence of 9s ends.  Note that x is truncated, not
     rounded.
     """
 
-    x0 = (x+'0').lower()
-    num_9s = min([i for i in range(len(x0)) if x0[i] < '9'])
-    return x[:num_9s+mantissa_display_length]
+    x0 = x+'0'
+    first_non_9_position = \
+        min([i for i in range(2, len(x0)) if x0[i] < '9'])
+    return x[:first_non_9_position + mantissa_display_length]
 
 
 def tktstr(ticket, mantissa_display_length=12):
     """
-    Return short printable form of a ticket.
+    Return short printable form of a ticket as (tktno, id, generation)
+    where tktno is a string '0.ddd..dd' representing a float.
 
-    Note: this printed form contain only the first
-    twelve significant digits of the ticket number.
-    Changing mantissa_display_length allows for variable
-    precision.
+    Note: this printed form contain at most the first
+    twelve (or mantissa_display_length) significant digits
+    of the ticket number after the 9s stop.
     """
 
-    return (trim(ticket.ticket_number, mantissa_display_length),
+    # unused alternative format of tktno as a float
+    # tktno = float(trim(ticket.ticket_number, mantissa_display_length))
+    tktno = trim(ticket.ticket_number, mantissa_display_length)
+    return (tktno,
             ticket.id,
             ticket.generation)
 
 
-def sha256(hash_input):
-    """
-    Return reverse of decimal SHA256 hash of input.
-
-    The output is reversed because the confersion to decimal (done for
-    reasons of clarity) has biased high-order digits.  Reversing the string
-    puts the low-order unbiased digits first.  This approach seems better
-    than just dropping the high-order digits, as it loses no information.
+def sha256_hex(hash_input):
+    """ 
+    Return 64-character hexadecimal representation of SHA256
+    hash of the given input. 
     """
 
-    x_hex = hashlib.sha256(str(hash_input).encode('utf-8')).hexdigest()
+    return hashlib.sha256(str(hash_input).encode('utf-8')).hexdigest()
+
+
+def sha256_uniform(hash_input):
+    """
+    Return SHA256 hash of input as real in (0, 1) represented as
+    a string of the form "0.dddd...dd" for arbitrary decimal digits d.
+
+    Not a float, but a string, to be able to use arbitrary precision.
+    The digits of the decimal output of hashlib.sha256 are used
+    in reverse order because the conversion to decimal (done for
+    reasons of clarity) gives biased high-order digits.  Reversing the
+    string puts the low-order unbiased digits first.
+    This is better than just dropping the high-order digits,
+    as it loses no information.
+    """
+
+    x_hex = sha256_hex(hash_input)
     x_int = ("{:064d}".format(int(x_hex, 16)))
     x_list = list(x_int)
     x_list.reverse()
-    return "".join(x_list)
+    return "0." + "".join(x_list)
 
 
 def first_fraction(id, seed):
@@ -221,29 +237,29 @@ def first_fraction(id, seed):
     Return initial pseudo-random fraction for given id and seed.
     """
 
-    return sha256(sha256(seed)+str(id))
+    return sha256_uniform(sha256_hex(seed) + str(id))
 
 
 def next_fraction(x):
     """
-    With input a string x (interpreted with leading point as
-    a fraction between 0 and 1), return a string that
+    With input a string x (a string of the form "0.ddd...dd"
+    representing a fraction between 0 and 1), return a string that
     represents a fraction y uniformly chosen in the interval (x, 1).
-    The last 64 digits of the result are output of sha256
-    on value x.
+    This is done by repeating replacing all but the initial
+    prefix of 9s in x with the output of the sha256 function, until
+    the result is larger than x.
     """
 
-    max_digit = '9'     # since this is decimal
-    x = x.lower()       # just to be sure
-    x0 = x+'0'          # in case x is all 9s
-    first_non_max_digit_position = \
-        min([i for i in range(len(x0)) if x0[i] < max_digit])
-    y = ''
+    assert x[:2] == '0.'
+    x0 = x+'0'          # in case x mantissa is all 9s
+    first_non_9_position = \
+        min([i for i in range(2, len(x0)) if x0[i] < '9'])
+    y = '0.'
     i = 0
     while y <= x0:
         i = i + 1
-        y = x0[:first_non_max_digit_position]
-        y = y + sha256(x + str(i))
+        y = x0[:first_non_9_position]
+        y = y + sha256_uniform(x + ':' + str(i))[2:]
     return y
 
 
@@ -344,14 +360,20 @@ def sampler(id_list,
                              the generator can be run forever, and a given
                              id may be sampled many times.
 
+                             If the output is a sequence of tickets, the
+                             components of a ticket may be accessed as
+                                 ticket.ticket_number
+                                 ticket.id
+                                 ticket.generation
+
    Examples (see routine test_sampler in test_consistent_sampler.py for
    corresponding code):
 
-        # Note "list" is to cause generator to execute, thus
-        # ensuring printout of items selected.
-        # No "take" options, so this shuffles input id_list
+   Note "list" is to cause generator to execute, thus
+   ensuring printout of items selected.
 
-   Example X1: Shuffling a list of size six.
+
+    Example X1: Shuffling a list of size six.
 
     list(sampler(['A-1', 'A-2', 'A-3',
                   'B-1', 'B-2', 'B-3'],
@@ -359,12 +381,12 @@ def sampler(id_list,
                  ids_only=True,
                  print_items=True))
     -->
-    B-3
     B-2
-    A-2
-    A-1
+    B-3
     A-3
+    A-2
     B-1
+    A-1
 
     Example X2: Taking sample of size 3 (prefix of shuffled list).
 
@@ -375,9 +397,9 @@ def sampler(id_list,
                  take=3,
                  print_items=True))
     -->
-    B-3
     B-2
-    A-2
+    B-3
+    A-3
 
     Example X3: Demonstrating consistency: shuffling the B items only.
 
@@ -386,8 +408,8 @@ def sampler(id_list,
                  ids_only=True,
                  print_items=True))
     -->
-    B-3
     B-2
+    B-3
     B-1
 
     Example X4: Same as example X1, but showing tickets in sorted order.
@@ -398,12 +420,12 @@ def sampler(id_list,
                  seed=314159,
                  print_items=True))
     -->
-    ('113341980066', 'B-3', 1)
-    ('141877540738', 'B-2', 1)
-    ('466661396065', 'A-2', 1)
-    ('468629358269', 'A-1', 1)
-    ('733927644463', 'A-3', 1)
-    ('839117388050', 'B-1', 1)
+    ('0.410310858090', 'B-2', 1)
+    ('0.470960291255', 'B-3', 1)
+    ('0.471438751218', 'A-3', 1)
+    ('0.567089805977', 'A-2', 1)
+    ('0.9781715679015', 'B-1', 1)
+    ('0.9828515724237', 'A-1', 1)
 
     Example X5: Same as example X2, but showing tickets in sorted order.
 
@@ -411,9 +433,9 @@ def sampler(id_list,
                  seed=314159,
                  print_items=True))
     -->
-    ('113341980066', 'B-3', 1)
-    ('141877540738', 'B-2', 1)
-    ('839117388050', 'B-1', 1)
+    ('0.410310858090', 'B-2', 1)
+    ('0.470960291255', 'B-3', 1)
+    ('0.9781715679015', 'B-1', 1)
 
     Example X6: Drawing sample of size 16 with replacement from set of size 6.
 
@@ -424,22 +446,22 @@ def sampler(id_list,
                  take=16,
                  print_items=True))
     -->
-    ('113341980066', 'B-3', 1)
-    ('141877540738', 'B-2', 1)
-    ('466661396065', 'A-2', 1)
-    ('468629358269', 'A-1', 1)
-    ('677637091114', 'A-1', 2)
-    ('702808736326', 'A-2', 2)
-    ('719933809656', 'A-2', 3)
-    ('733927644463', 'A-3', 1)
-    ('759991821025', 'B-2', 2)
-    ('762895509946', 'B-3', 2)
-    ('794847881369', 'A-1', 3)
-    ('839117388050', 'B-1', 1)
-    ('843036233644', 'B-2', 3)
-    ('848604577008', 'B-1', 2)
-    ('865601904237', 'A-2', 4)
-    ('867373930769', 'B-2', 4)
+    ('0.410310858090', 'B-2', 1)
+    ('0.470960291255', 'B-3', 1)
+    ('0.471438751218', 'A-3', 1)
+    ('0.567089805977', 'A-2', 1)
+    ('0.659534619443', 'A-2', 2)
+    ('0.765106651657', 'A-2', 3)
+    ('0.796265241255', 'B-3', 2)
+    ('0.872112726718', 'A-2', 4)
+    ('0.893337722107', 'B-2', 2)
+    ('0.9026656781853', 'A-3', 2)
+    ('0.9105083805303', 'A-3', 3)
+    ('0.9200375234735', 'B-2', 3)
+    ('0.9257009021378', 'B-3', 3)
+    ('0.9357740622701', 'A-3', 4)
+    ('0.9425889093517', 'B-3', 4)
+    ('0.9501908345456', 'B-2', 4)
 
     Example X7: Drawing sample of size 16 with replacement from set of size 3.
     Note consistency with example X6.
@@ -450,22 +472,22 @@ def sampler(id_list,
                  take=16,
                  print_items=True))
     -->
-    ('113341980066', 'B-3', 1)
-    ('141877540738', 'B-2', 1)
-    ('759991821025', 'B-2', 2)
-    ('762895509946', 'B-3', 2)
-    ('839117388050', 'B-1', 1)
-    ('843036233644', 'B-2', 3)
-    ('848604577008', 'B-1', 2)
-    ('867373930769', 'B-2', 4)
-    ('892077790520', 'B-3', 3)
-    ('9045686058030', 'B-3', 4)
-    ('9190580900592', 'B-3', 5)
-    ('9443246166952', 'B-3', 6)
-    ('9552531589986', 'B-3', 7)
-    ('9727255367192', 'B-1', 3)
-    ('9776588399539', 'B-3', 8)
-    ('9865106184210', 'B-3', 9)
+    ('0.410310858090', 'B-2', 1)
+    ('0.470960291255', 'B-3', 1)
+    ('0.796265241255', 'B-3', 2)
+    ('0.893337722107', 'B-2', 2)
+    ('0.9200375234735', 'B-2', 3)
+    ('0.9257009021378', 'B-3', 3)
+    ('0.9425889093517', 'B-3', 4)
+    ('0.9501908345456', 'B-2', 4)
+    ('0.9760011390576', 'B-3', 5)
+    ('0.9781715679015', 'B-1', 1)
+    ('0.99090101907691', 'B-2', 5)
+    ('0.99307478253999', 'B-2', 6)
+    ('0.99467877733761', 'B-3', 6)
+    ('0.99558676418163', 'B-2', 7)
+    ('0.99678142987041', 'B-3', 7)
+    ('0.99737514805042', 'B-2', 8)
 
     Example X8: Drawing sample of size 16 with replacement from set of size 1.
     Note consistency with examplex X6 and X7.
@@ -476,22 +498,22 @@ def sampler(id_list,
                  take=16,
                  print_items=True))
     -->
-    ('839117388050', 'B-1', 1)
-    ('848604577008', 'B-1', 2)
-    ('9727255367192', 'B-1', 3)
-    ('99231211726338', 'B-1', 4)
-    ('99460857477463', 'B-1', 5)
-    ('99566954382692', 'B-1', 6)
-    ('99700452271200', 'B-1', 7)
-    ('999393077383314', 'B-1', 8)
-    ('999693483929140', 'B-1', 9)
-    ('999825172380378', 'B-1', 10)
-    ('9999308826139129', 'B-1', 11)
-    ('99999211450390874', 'B-1', 12)
-    ('99999617913179039', 'B-1', 13)
-    ('99999835607675052', 'B-1', 14)
-    ('999999222600552947', 'B-1', 15)
-    ('999999787723766934', 'B-1', 16)
+    ('0.9781715679015', 'B-1', 1)
+    ('0.99820529419851', 'B-1', 2)
+    ('0.999816322794165', 'B-1', 3)
+    ('0.9999155113816043', 'B-1', 4)
+    ('0.9999740105535687', 'B-1', 5)
+    ('0.9999889761394924', 'B-1', 6)
+    ('0.9999894745680419', 'B-1', 7)
+    ('0.99999518448838761', 'B-1', 8)
+    ('0.99999770648841628', 'B-1', 9)
+    ('0.999999324301596427', 'B-1', 10)
+    ('0.999999588760690097', 'B-1', 11)
+    ('0.999999659277522509', 'B-1', 12)
+    ('0.999999835543910018', 'B-1', 13)
+    ('0.99999999723005422153', 'B-1', 14)
+    ('0.99999999859359985917', 'B-1', 15)
+    ('0.999999999540636137034', 'B-1', 16)
     """
 
     heap = []
