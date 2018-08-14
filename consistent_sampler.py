@@ -171,11 +171,26 @@ Ticket = collections.namedtuple("Ticket",
 
 
 def trim(x, mantissa_display_length=12):
-    """
-    Return compressed form of fraction x (string), 
-    giving only 12 significant digits after initial
-    sequence of 9s ends.  Note that x is truncated, not
-    rounded.
+    """Return trimmed form of real x (a string). 
+
+    Gives only 12 significant digits after initial
+    sequence of 9s ends.  
+    Note that x is truncated, not rounded.
+
+    Args:
+        x (str): A string representation of real in (0,1).
+            It is assumed that x starts with '0.'.
+        mantissa_display_length (int): Precision desired.
+            The output is trimmed to show at most this many 
+            significant digits after the initial segment of 9s.
+            Defaults to 12.
+
+    Returns:
+        str: the trimmed string.
+
+    Example:
+        >>> trim('0.9991234567890', 4)
+        '0.9991234'
     """
 
     x0 = x+'0'
@@ -185,27 +200,40 @@ def trim(x, mantissa_display_length=12):
 
 
 def tktstr(ticket, mantissa_display_length=12):
-    """
-    Return short printable form of a ticket as (tktno, id, generation)
-    where tktno is a string '0.ddd..dd' representing a float.
+    """Return short printable form of a ticket.
 
-    Note: this printed form contain at most the first
-    twelve (or mantissa_display_length) significant digits
-    of the ticket number after the 9s stop.
+    Args:
+        ticket (Ticket): the ticket to be represented.
+        mantissa_display_length (int): Precision desired.
+            Defaults to 12.
+
+    Returns:
+        a Ticket which is ame as input ticket, except that
+            that the ticket_number has been trimmed to show
+            at ost mantissa_display_length digits after the 9s.
+    
+    Example:
+        >>> tktstr(Ticket('0.9991234567890', 'AB-130', 1), 4)
+        Ticket('0.9991234', 'AB-130', 1)
     """
 
-    # unused alternative format of tktno as a float
-    # tktno = float(trim(ticket.ticket_number, mantissa_display_length))
     tktno = trim(ticket.ticket_number, mantissa_display_length)
-    return (tktno,
-            ticket.id,
-            ticket.generation)
+    return Ticket(tktno, ticket.id, ticket.generation)
 
 
 def sha256_hex(hash_input):
-    """ 
-    Return 64-character hexadecimal representation of SHA256
-    hash of the given input. 
+    """ Return 64-character hex representation of SHA256 of input.
+
+    Args:
+        hash_input (obj): a python object having a string representation.
+
+    Returns:
+        length-64 hexadecimal string representing result of applying
+        SHA256 to utf-8 encoding of string representation of input.
+        
+    Example:
+        >>> sha256_hex("abc")
+        'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad'
     """
 
     return hashlib.sha256(str(hash_input).encode('utf-8')).hexdigest()
@@ -213,16 +241,26 @@ def sha256_hex(hash_input):
 
 def sha256_uniform(hash_input):
     """
-    Return SHA256 hash of input as real in (0, 1) represented as
-    a string of the form "0.dddd...dd" for arbitrary decimal digits d.
+    Return SHA256 hash of input as string representation of real in (0, 1).
 
-    Not a float, but a string, to be able to use arbitrary precision.
+    Args:
+        hash_input (obj): a python object with a string representation
+
+    Returns:
+        a string represention of the form '0.dddd...dddd'
+            of arbitrary length where d's are arbitrary decimal digits.
+
+    Example:
+        >>> sha256_uniform("abc")
+        '0.56998071861792858926477341561059638840106636224182943832566300809078486324348'
+
+    Notes:
+    Returns a string, not a float, to be able to use arbitrary precision.
     The digits of the decimal output of hashlib.sha256 are used
     in reverse order because the conversion to decimal (done for
     reasons of clarity) gives biased high-order digits.  Reversing the
-    string puts the low-order unbiased digits first.
-    This is better than just dropping the high-order digits,
-    as it loses no information.
+    string puts the low-order unbiased digits first, while losing no
+    information.
     """
 
     x_hex = sha256_hex(hash_input)
@@ -233,21 +271,44 @@ def sha256_uniform(hash_input):
 
 
 def first_fraction(id, seed):
-    """
-    Return initial pseudo-random fraction for given id and seed.
+    """ Return initial pseudo-random fraction for given id and seed.
+
+    Args:
+        id (obj): a python object with a string representation
+        seed (obj): a python object with a string represetation
+
+    Returns:
+        A real number in (0,1) represented as '0.dddd...dddd'
+        of arbitrary length.  As seed varies, this number is
+        distributed uniformly in the interval (0,1).
+
+    Example:
+        >>> first_fraction('AB-130', '01382438112797316654')
+        '0.26299714122838008416507544297546663599715395525154425586041245287750224561854'        
     """
 
     return sha256_uniform(sha256_hex(seed) + str(id))
 
 
 def next_fraction(x):
-    """
-    With input a string x (a string of the form "0.ddd...dd"
-    representing a fraction between 0 and 1), return a string that
-    represents a fraction y uniformly chosen in the interval (x, 1).
-    This is done by repeating replacing all but the initial
-    prefix of 9s in x with the output of the sha256 function, until
-    the result is larger than x.
+    """ Return pseudorandom real y in (x, 1) (so y>x).
+
+    Args:
+        x (str): An input string of the form "0.ddd...dddd"
+            representing a real number in (0,1).
+
+    Returns:
+        a string y of the form '0.dddd..dddd' chosen pseudorandomly
+            from the interval (x, 1).
+
+    Method:
+        Repeatedly replacing all but the initial segment of 9s in
+        x with the output of the digits of sha256_uniform in counter
+        mode, until the result is larger than x.
+
+    Example:
+        >>> next_fraction('0.25471')
+        '0.642853261655004694691182528114375607701032283189922170593838029306715548381901'
     """
 
     assert x[:2] == '0.'
@@ -264,21 +325,38 @@ def next_fraction(x):
 
 
 def first_ticket(id, seed):
-    "Return initial (generation 1) ticket for the given id."
+    """Return initial (generation 1) ticket for the given id and seed.
+
+    Args:
+        id (str): a python object with a string representation
+        seed (str): a python object with a string representation
+
+    Returns:
+        a Ticket that is the first-generation ticket for the given 
+            id and seed.
+
+    Example:
+        >>> first_ticket('AB-130', '01382438112797316654')
+        Ticket(ticket_number='0.26299714122838008416507544297546663599715395525154425586041245287750224561854', id='AB-130', generation=1)
+    """
 
     return Ticket(first_fraction(id, seed), id, 1)
 
 
 def next_ticket(ticket):
-    """
-    Given a ticket, return the next ticket for the given ticket id.
+    """Return the next ticket for the given ticket.  
 
-    Returned ticket has a ticket number that is a pseudorandom real in
-    the interval:
-          (ticket.ticket_number, 1)
+    Args:
+        ticket (Ticket): an arbitrary ticket
 
-    The generation of the returned ticket is one larger than the
-    generation of the input ticket.  The id is the same.
+    Returns:
+        the next ticket in the chain of tickets, having the next 
+        pseudorandom ticket number, the same ticket id, and a 
+        generation number that is one larger.
+
+    Example:
+        >>> next_ticket(Ticket(ticket_number='0.26299714122838008416507544297546663599715395525154425586041245287750224561854', id='AB-130', generation=1))
+        Ticket(ticket_number='0.8232357229934205790595761924514048157652891124687533667363938813600770093316', id='AB-130', generation=2)
     """
 
     return Ticket(next_fraction(ticket.ticket_number),
@@ -287,8 +365,30 @@ def next_ticket(ticket):
 
 
 def draw_without_replacement(heap):
-    """
-    Return ticket drawn.
+    """Return ticket drawn without replacement from given heap of tickets.
+
+    Args:
+        heap (list): an array of Tickets, arranged into a heap using heapq.
+            Such a heap is also known as a 'priority queue'.
+
+    Returns:
+        the Ticket with the least ticket number in the heap.
+
+    Side-effects:
+        the heap is reduced in size by one, as the drawn ticket is not replaced.
+      
+    Example:
+        >>> x = Ticket('0.234', 'x', 2)
+        >>> y = Ticket('0.354', 'y', 1)
+        >>> z = Ticket('0.666', 'z', 2)
+        >>> heap = []
+        >>> heapq.heappush(heap, x)
+        >>> heapq.heappush(heap, y)
+        >>> heapq.heappush(heap, z)
+        >>> heap
+        [Ticket(ticket_number='0.234', id='x', generation=2), Ticket(ticket_number='0.354', id='y', generation=1), Ticket(ticket_number='0.666', id='z', generation=2)]
+        >>> draw_without_replacement(heap)
+        Ticket(ticket_number='0.234', id='x', generation=2)
     """
 
     ticket = heapq.heappop(heap)
@@ -296,8 +396,33 @@ def draw_without_replacement(heap):
 
 
 def draw_with_replacement(heap):
-    """
-    Return ticket drawn.
+    """Return ticket drawn with replacement from given heap of tickets.
+
+    Args:
+        heap (list): an array of Tickets, arranged into a heap using heapq.
+            Such a heap is also known as a 'priority queue'.
+
+    Returns:
+        the Ticket with the least ticket number in the heap.
+
+    Side-effects:
+        the heap maintains its size, as the drawn ticket is replaced
+            by the next ticket for that id.
+      
+    Example:
+        >>> x = Ticket('0.234', 'x', 2)
+        >>> y = Ticket('0.354', 'y', 1)
+        >>> z = Ticket('0.666', 'z', 2)
+        >>> heap = []
+        >>> heapq.heappush(heap, x)
+        >>> heapq.heappush(heap, y)
+        >>> heapq.heappush(heap, z)
+        >>> heap
+        [Ticket(ticket_number='0.234', id='x', generation=2), Ticket(ticket_number='0.354', id='y', generation=1), Ticket(ticket_number='0.666', id='z', generation=2)]
+        >>> draw_with_replacement(heap)
+        Ticket(ticket_number='0.234', id='x', generation=2)
+        >>> heap
+        [Ticket(ticket_number='0.354', id='y', generation=1), Ticket(ticket_number='0.666', id='z', generation=2), Ticket(ticket_number='0.547830802749402616364646686795722512609112766306951592422621788875312684400211', id='x', generation=3)]
     """
 
     ticket = heapq.heappop(heap)
@@ -312,208 +437,68 @@ def sampler(id_list,
             drop=0,
             take=float('inf'),
             print_items=False):
-    """
-    Return a generator for the given list of ids,
-    but sampled in a pseudo-random order determined by seed.
+    """Return generator for a sample of the given list of ids.
 
-    Inputs:
-        id_list           -- a list or iterable for a finite collection
-                             of ids.  Each id is typically a string,
-                             but may be a tuple or other printable object.
-        seed              -- typically string, but in general an arbitrary
-                             printable object.  Used to seed the
-                             pseudorandom number generator.
-        with_replacement  -- True if and only if sampling is with replacement.
-        ids_only          -- True if each output element is an id from id_list
-                             Otherwise, each output element is a triple
-                             (ticket) of the form:
-                                 (ticket_number, id, generation)
-                             where
-                                ticket_number is a real number
-                                    (with leading point)
-                                id is an id from id_list, and
-                                generation is the number of times this id has
-                                    been sampled so far
-                                    (including the current sample).
-        drop              -- an integer saying how many of the output
-                             sequence to drop
-                             (defaults to 0)
-        take              -- an integer saying how many of the output
-                             sequence to take, after the drops
-                             If drop is 0, then take is the sample size.
-                             (defaults to infinity)
-        print_items       -- if True, also print each item as it is selected
-                             (these are ids if ids_only is True, otherwise
-                             they are tickets)
-                             This has no effect unless the call to
-                             sampler is actually used, as in
-                                 list(sampler(...))
-                             (defaults to False)
+    The sample is determined in a pseudo-random order controlled by 
+    the given seed.
+
+    Args:
+        id_list (iterable): a list or iterable for a finite collection
+            of ids.  Each id is typically a string, but may be a tuple 
+            or other printable object.
+        seed (object): a python object with a string representation
+        with_replacement (bool): True if and only if sampling is with replacement
+            (defaults to False)
+        ids_only (bool): True if each output element is an id from id_list;
+            False if each output element is a ticket.
+            (defaults to False)
+        drop (int): an integer saying how many of the output sequence to drop
+            (defaults to 0)
+        take (int): an integer saying how many of the output sequence to take, 
+            after the drops. If drop is 0, then take is the sample size.
+            (defaults to infinity)
+        print_items (bool): if True, also print each item as it is selected
+            (these are ids if ids_only is True, otherwise they are tickets)
+            This has no effect unless the call to sampler is actually used, 
+            as in list(sampler(...))
+            (defaults to False)
 
     Outputs:
-        gen_sample        -- a generator for the sample.  If the
-                             sampling is without replacement, then the
-                             result is a generator for a finite list of
-                             ids (if ids_only is True, else tickets),
-                             a pseudorandom permutation of id_list.
-                             If the sampling is with replacement, then
-                             the generator can be run forever, and a given
-                             id may be sampled many times.
+        a generator for the sample. 
+            If the sampling is without replacement, then the
+            result is a generator for a finite sample
+            (containing only ids if ids_only is True, otherwise containing tickets).
+            If the sampling is with replacement, then the generator can be run forever, 
+            and a given id may be sampled many times.
 
-                             If the output is a sequence of tickets, the
-                             components of a ticket may be accessed as
-                                 ticket.ticket_number
-                                 ticket.id
-                                 ticket.generation
+            If the output is a sequence of tickets, then each ticket is
+            a triple of the form
+                (ticket_number, id, generation)
+            where
+                ticket_number is a real number represented as a string '0.ddd..ddd'
+                id is an id from id_list
+                generation is a positive integer representing the number
+                    of times this id has been sampled so far
+                    (including the current sample).
+            These components may be accessed as:
+                ticket.ticket_number
+                ticket.id
+                ticket.generation
 
-   Examples (see routine test_sampler in test_consistent_sampler.py for
-   corresponding code):
 
-   Note "list" is to cause generator to execute, thus
-   ensuring printout of items selected.
+    Examples:
+        >>> list(sampler(['A#2', 'B#7', 'C#1', 'D#4'], ids_only=True, 
+        ... with_replacement=True, take=8, seed=314159))
+        ['D#4', 'C#1', 'C#1', 'B#7', 'A#2', 'C#1', 'D#4', 'B#7']
 
+        >>> for t in sampler(['ab-1', 'ab-2', 'cd-1', 'ef-3'], seed=314159):
+        ...     print(tktstr(t))
+        Ticket(ticket_number='0.317685817477', id='cd-1', generation=1)
+        Ticket(ticket_number='0.832984519533', id='ef-3', generation=1)
+        Ticket(ticket_number='0.9098039269523', id='ab-1', generation=1)
+        Ticket(ticket_number='0.9231549043811', id='ab-2', generation=1)        
 
-    Example X1: Shuffling a list of size six.
-
-    list(sampler(['A-1', 'A-2', 'A-3',
-                  'B-1', 'B-2', 'B-3'],
-                 seed=314159,
-                 ids_only=True,
-                 print_items=True))
-    -->
-    B-2
-    B-3
-    A-3
-    A-2
-    B-1
-    A-1
-
-    Example X2: Taking sample of size 3 (prefix of shuffled list).
-
-    list(sampler(['A-1', 'A-2', 'A-3',
-                  'B-1', 'B-2', 'B-3'],
-                 seed=314159,
-                 ids_only=True,
-                 take=3,
-                 print_items=True))
-    -->
-    B-2
-    B-3
-    A-3
-
-    Example X3: Demonstrating consistency: shuffling the B items only.
-
-    list(sampler(['B-1', 'B-2', 'B-3'],
-                 seed=314159,
-                 ids_only=True,
-                 print_items=True))
-    -->
-    B-2
-    B-3
-    B-1
-
-    Example X4: Same as example X1, but showing tickets in sorted order.
-    Each ticket has: ticket_number, id, and generation.
-
-    list(sampler(['A-1', 'A-2', 'A-3',
-                  'B-1', 'B-2', 'B-3'],
-                 seed=314159,
-                 print_items=True))
-    -->
-    ('0.410310858090', 'B-2', 1)
-    ('0.470960291255', 'B-3', 1)
-    ('0.471438751218', 'A-3', 1)
-    ('0.567089805977', 'A-2', 1)
-    ('0.9781715679015', 'B-1', 1)
-    ('0.9828515724237', 'A-1', 1)
-
-    Example X5: Same as example X2, but showing tickets in sorted order.
-
-    list(sampler(['B-1', 'B-2', 'B-3'],
-                 seed=314159,
-                 print_items=True))
-    -->
-    ('0.410310858090', 'B-2', 1)
-    ('0.470960291255', 'B-3', 1)
-    ('0.9781715679015', 'B-1', 1)
-
-    Example X6: Drawing sample of size 16 with replacement from set of size 6.
-
-    list(sampler(['A-1', 'A-2', 'A-3',
-                  'B-1', 'B-2', 'B-3'],
-                 seed=314159,
-                 with_replacement=True,
-                 take=16,
-                 print_items=True))
-    -->
-    ('0.410310858090', 'B-2', 1)
-    ('0.470960291255', 'B-3', 1)
-    ('0.471438751218', 'A-3', 1)
-    ('0.567089805977', 'A-2', 1)
-    ('0.659534619443', 'A-2', 2)
-    ('0.765106651657', 'A-2', 3)
-    ('0.796265241255', 'B-3', 2)
-    ('0.872112726718', 'A-2', 4)
-    ('0.893337722107', 'B-2', 2)
-    ('0.9026656781853', 'A-3', 2)
-    ('0.9105083805303', 'A-3', 3)
-    ('0.9200375234735', 'B-2', 3)
-    ('0.9257009021378', 'B-3', 3)
-    ('0.9357740622701', 'A-3', 4)
-    ('0.9425889093517', 'B-3', 4)
-    ('0.9501908345456', 'B-2', 4)
-
-    Example X7: Drawing sample of size 16 with replacement from set of size 3.
-    Note consistency with example X6.
-
-    list(sampler(['B-1', 'B-2', 'B-3'],
-                 seed=314159,
-                 with_replacement=True,
-                 take=16,
-                 print_items=True))
-    -->
-    ('0.410310858090', 'B-2', 1)
-    ('0.470960291255', 'B-3', 1)
-    ('0.796265241255', 'B-3', 2)
-    ('0.893337722107', 'B-2', 2)
-    ('0.9200375234735', 'B-2', 3)
-    ('0.9257009021378', 'B-3', 3)
-    ('0.9425889093517', 'B-3', 4)
-    ('0.9501908345456', 'B-2', 4)
-    ('0.9760011390576', 'B-3', 5)
-    ('0.9781715679015', 'B-1', 1)
-    ('0.99090101907691', 'B-2', 5)
-    ('0.99307478253999', 'B-2', 6)
-    ('0.99467877733761', 'B-3', 6)
-    ('0.99558676418163', 'B-2', 7)
-    ('0.99678142987041', 'B-3', 7)
-    ('0.99737514805042', 'B-2', 8)
-
-    Example X8: Drawing sample of size 16 with replacement from set of size 1.
-    Note consistency with examplex X6 and X7.
-
-    list(sampler(['B-1'],
-                 seed=314159,
-                 with_replacement=True,
-                 take=16,
-                 print_items=True))
-    -->
-    ('0.9781715679015', 'B-1', 1)
-    ('0.99820529419851', 'B-1', 2)
-    ('0.999816322794165', 'B-1', 3)
-    ('0.9999155113816043', 'B-1', 4)
-    ('0.9999740105535687', 'B-1', 5)
-    ('0.9999889761394924', 'B-1', 6)
-    ('0.9999894745680419', 'B-1', 7)
-    ('0.99999518448838761', 'B-1', 8)
-    ('0.99999770648841628', 'B-1', 9)
-    ('0.999999324301596427', 'B-1', 10)
-    ('0.999999588760690097', 'B-1', 11)
-    ('0.999999659277522509', 'B-1', 12)
-    ('0.999999835543910018', 'B-1', 13)
-    ('0.99999999723005422153', 'B-1', 14)
-    ('0.99999999859359985917', 'B-1', 15)
-    ('0.999999999540636137034', 'B-1', 16)
+        For additional examples see test_consistent_sampler.py
     """
 
     heap = []
