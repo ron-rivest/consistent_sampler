@@ -35,7 +35,7 @@ yields a generator g whose output can be printed:
 
     print(list(ticket.id for ticket in g))
    
-whichi produces:
+which produces:
 
     ['B-2', 'B-1', 'A-3', 'B-3']
     
