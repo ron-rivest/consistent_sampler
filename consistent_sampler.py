@@ -464,8 +464,9 @@ def sampler(id_list,
             (defaults to False)
         drop (int): an integer saying how many of the output sequence to drop
             (defaults to 0)
-        take (int): an integer saying how many of the output sequence to take,
-            after the drops. If drop is 0, then take is the sample size.
+        take (int): an integer giving an upper bound on the number of
+            elements of the output sequence to take, after the drops. 
+            If drop is 0, then take is an upper bound on the sample size.
             (defaults to infinity)
         print_items (bool): if True, also print each item as it is selected
             (these are ids if ids_only is True, otherwise they are tickets)
