@@ -141,9 +141,7 @@ from consistent_sampler import *
 def test_sampler():
     "Generate code that generates examples in sampler docstring"
 
-    # in following; list() wrapper is needed so
-    # print_items has effect.
-
+    print("test_sampler.")
     print("\n    Example X1: Shuffling a list of size six.")
     print("""
     >>> list(sampler(['A-1', 'A-2', 'A-3',
@@ -250,15 +248,20 @@ def test_sampler():
 
 def test_fraction():
 
-    print("First pseudorandom fraction.")
-    print("first_fraction('C-14', 314159)")
+    print("test_fraction: First pseudorandom fraction.")
+    print(">>> first_fraction('C-14', 314159)")
     x = first_fraction("C-14", 314159)
-    print("-->", x)
+    print(x)
 
     print("20 subsequent invocations of 'next_fraction':")
+    print("""
+          >>> for i in range(20):
+          >>>    x = next_fraction(x)
+          >>>    print(x)
+          """)
     for i in range(20):
         x = next_fraction(x)
-        print("-->", x)
+        print(x)
 
 
 if __name__ == '__main__':
