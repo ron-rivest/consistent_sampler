@@ -13,13 +13,11 @@ Differences include:
    -- use of high-precision numbers represented as arbtrary-precision
       decimal fractions between 0 and 1
       (Thanks to Philip Stark for suggesting string representations.)
-   -- ticket numbers depend on generation number,
-      and are independent of ticket numbers computed for other
-      objects ('consistent sampling')
 
 The intended use here is for election audits, but there is nothing
 specific in this code to elections.  For elections, the objects are
-ballots.
+ballots, and the ids are typically ballot locations or imprinted
+ballot identifiers.
 
 For a similar sampling method, see Stark's audit tools:
    https://www.stat.berkeley.edu/~stark/Vote/auditTools.htm
