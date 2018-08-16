@@ -453,7 +453,8 @@ def sampler(id_list,
     Args:
         id_list (iterable): a list or iterable for a finite collection
             of ids.  Each id is typically a string, but may be a tuple
-            or other printable object.
+            or other printable object.  It is assumed (but not checked)
+            that these ids are distinct.
         seed (object): a python object with a string representation
         with_replacement (bool): True if and only if sampling is with
             replacement (defaults to False)
