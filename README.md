@@ -44,11 +44,11 @@ https://arxiv.org/abs/1612.01041
 and the references to consistent sampling therein.
 
 The routine here may (or may not) be novel in that it extends consistent
-sampling to sampling by replacement: when an item is sampled and then replaced
+sampling to sampling with replacement: when an item is sampled and then replaced
 in the set of items being sampled, it is given a new random number drawn uniformly
 from the set of numbers in (0, 1) larger than its previous associated number.
 To implement this efficiently and portably, we represent a number in (0, 1) as
-a variable-length decimal string with the point assumed at the left-end. 
+a variable-length decimal string of the form '0.dddddd...' . 
 
 For our applications, one big advantage of consistent sampling is the following.
 If each county collects cast ballots separately, then they can order their own ballots
