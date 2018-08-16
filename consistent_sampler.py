@@ -207,7 +207,7 @@ def tktstr(ticket, mantissa_display_length=12):
 
     Example:
         >>> tktstr(Ticket('0.9991234567890', 'AB-130', 1), 4)
-        Ticket('0.9991234', 'AB-130', 1)
+        Ticket(ticket_number='0.9991234', id='AB-130', generation=1)
     """
 
     tktno = trim(ticket.ticket_number, mantissa_display_length)
@@ -330,9 +330,7 @@ def first_ticket(id, seed):
 
     Example:
         >>> first_ticket('AB-130', '01382438112797316654')
-        Ticket(ticket_number='0.26299714122838008416507544297546663\
-        599715395525154425586041245287750224561854', id='AB-130',
-        generation=1)
+        Ticket(ticket_number='0.26299714122838008416507544297546663599715395525154425586041245287750224561854', id='AB-130', generation=1)
     """
 
     return Ticket(first_fraction(id, seed), id, 1)
@@ -350,12 +348,8 @@ def next_ticket(ticket):
         generation number that is one larger.
 
     Example:
-        >>> next_ticket(Ticket(ticket_number='0.262997141228380084165\
-        07544297546663599715395525154425586041245287750224561854',
-        id='AB-130', generation=1))
-        Ticket(ticket_number='0.8232357229934205790595761924514048157\
-        652891124687533667363938813600770093316',
-        id='AB-130', generation=2)
+        >>> next_ticket(Ticket(ticket_number='0.26299714122838008416507544297546663599715395525154425586041245287750224561854', id='AB-130', generation=1))
+        Ticket(ticket_number='0.8232357229934205790595761924514048157652891124687533667363938813600770093316', id='AB-130', generation=2)
     """
 
     return Ticket(next_fraction(ticket.ticket_number),
@@ -385,10 +379,11 @@ def draw_without_replacement(heap):
         >>> heapq.heappush(heap, x)
         >>> heapq.heappush(heap, y)
         >>> heapq.heappush(heap, z)
-        >>> heap
-        [Ticket(ticket_number='0.234', id='x', generation=2),
-         Ticket(ticket_number='0.354', id='y', generation=1),
-         Ticket(ticket_number='0.666', id='z', generation=2)]
+        >>> for ticket in heap:
+        ...     print(ticket)
+        Ticket(ticket_number='0.234', id='x', generation=2)
+        Ticket(ticket_number='0.354', id='y', generation=1)
+        Ticket(ticket_number='0.666', id='z', generation=2)
         >>> draw_without_replacement(heap)
         Ticket(ticket_number='0.234', id='x', generation=2)
     """
@@ -419,18 +414,18 @@ def draw_with_replacement(heap):
         >>> heapq.heappush(heap, x)
         >>> heapq.heappush(heap, y)
         >>> heapq.heappush(heap, z)
-        >>> heap
-        [Ticket(ticket_number='0.234', id='x', generation=2),
-         Ticket(ticket_number='0.354', id='y', generation=1),
-         Ticket(ticket_number='0.666', id='z', generation=2)]
+        >>> for ticket in heap:
+        ...    print(ticket) 
+        Ticket(ticket_number='0.234', id='x', generation=2)
+        Ticket(ticket_number='0.354', id='y', generation=1)
+        Ticket(ticket_number='0.666', id='z', generation=2)
         >>> draw_with_replacement(heap)
         Ticket(ticket_number='0.234', id='x', generation=2)
-        >>> heap
-        [Ticket(ticket_number='0.354', id='y', generation=1),
-         Ticket(ticket_number='0.666', id='z', generation=2),
-         Ticket(ticket_number='0.54783080274940261636464668679572\
-         2512609112766306951592422621788875312684400211',
-         id='x', generation=3)]
+        >>> for ticket in heap:
+        ...    print(ticket) 
+        Ticket(ticket_number='0.354', id='y', generation=1)
+        Ticket(ticket_number='0.666', id='z', generation=2)
+        Ticket(ticket_number='0.547830802749402616364646686795722512609112766306951592422621788875312684400211', id='x', generation=3)
     """
 
     ticket = heapq.heappop(heap)
@@ -532,3 +527,8 @@ def sampler(id_list,
                 yield ticket
         elif count > drop+take:
             return
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
+    
