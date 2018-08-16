@@ -357,6 +357,36 @@ def next_ticket(ticket):
                   ticket.generation+1)
 
 
+def make_ticket_heap(id_list, seed):
+    """Make a heap containing one ticket for each id in id_list.
+
+    Args:
+        id_list (iterable): a list or iterable with a list of distinct ids
+        seed (str): a string or any printable python object.
+
+    Returns:
+        a list that is a min-heap created by heapq with one ticket per id
+            in id_list.  Ticket numbers are determined by the id and the seed.
+            By the heap property, the ticket_number at position i will be
+            less than or equal to the ticket_numbers at positions 2i+1
+            and 2i+2.
+    
+    Example:
+    >>> heap = make_ticket_heap(['dog', 'cat', 'fish', 'goat'], 'xy()134!g2n')
+    >>> for ticket in heap:
+    ...     print(ticket)
+    Ticket(ticket_number='0.24866413894129579898796850445568128508290132707747976039848637531569373309555', id='cat', generation=1)
+    Ticket(ticket_number='0.33886035615681875183111698317327684455682722683976874746986356932751818935066', id='dog', generation=1)
+    Ticket(ticket_number='0.74685932088827950509145941729789143204056041958068799542050396198792954500593', id='fish', generation=1)
+    Ticket(ticket_number='0.49599842072022713663423753308080171636735689997237236247068925068573448764387', id='goat', generation=1)
+    """
+
+    heap = []
+    for id in id_list:
+        heapq.heappush(heap, first_ticket(id, seed))
+    return heap
+
+
 def draw_without_replacement(heap):
     """Return ticket drawn without replacement from given heap of tickets.
 
@@ -448,8 +478,8 @@ def sampler(id_list,
     Args:
         id_list (iterable): a list or iterable for a finite collection
             of ids.  Each id is typically a string, but may be a tuple
-            or other printable object.  It is assumed (but not checked)
-            that these ids are distinct.
+            or other printable object.  It is checked that these ids 
+            are distinct.
         seed (object): a python object with a string representation
         with_replacement (bool): True if and only if sampling is with
             replacement (defaults to False)
@@ -491,6 +521,8 @@ def sampler(id_list,
                 ticket.id
                 ticket.generation
 
+    Exceptions:
+        Raises AssertionError if there are duplicate ids in id_list
 
     Examples:
         >>> list(sampler(['A#2', 'B#7', 'C#1', 'D#4'], ids_only=True,
@@ -507,9 +539,11 @@ def sampler(id_list,
         For additional examples see test_consistent_sampler.py
     """
 
-    heap = []
-    for id in id_list:
-        heapq.heappush(heap, first_ticket(id, seed))
+    assert len(id_list) == len(set(id_list)),\
+        "Input to sampler contains duplicate ids!"
+    # check that there are no duplicate ids in id_list
+    
+    heap = make_ticket_heap(id_list, seed)
     count = 0
     while len(heap) > 0:
         ticket = draw_without_replacement(heap)
