@@ -567,7 +567,6 @@ def sampler(id_list,
     assert len(id_list) == len(set(id_list)),\
         "Input id_list to sampler contains duplicate ids: {}"\
         .format(duplicates(id_list))
-    # report if there are duplicate ids in id_list
 
     heap = make_ticket_heap(id_list, seed)
     count = 0
