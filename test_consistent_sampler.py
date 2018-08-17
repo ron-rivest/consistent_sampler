@@ -5,11 +5,12 @@ from consistent_sampler import *
 """
     Example X1: Shuffling a list of size six.
 
-    >>> list(sampler(['A-1', 'A-2', 'A-3',
-                      'B-1', 'B-2', 'B-3'],
-                     seed=314159,
-                     ids_only=True,
-                     print_items=True))
+    >>> for id in sampler(['A-1', 'A-2', 'A-3',
+                            'B-1', 'B-2', 'B-3'],
+                           seed=314159,
+                           ids_only=True):
+            print(id)
+
     B-2
     B-3
     A-3
@@ -139,111 +140,121 @@ from consistent_sampler import *
 """
 
 def test_sampler():
-    "Generate code that generates examples in sampler docstring"
+    "Illustrates use of consistent_sampler.sampler"
 
     print("test_sampler.")
     print("\n    Example X1: Shuffling a list of size six.")
     print("""
-    >>> list(sampler(['A-1', 'A-2', 'A-3',
-                      'B-1', 'B-2', 'B-3'],
-                     seed=314159,
-                     ids_only=True,
-                     print_items=True))""")
-    list(sampler(['A-1', 'A-2', 'A-3',
-                  'B-1', 'B-2', 'B-3'],
-                 seed=314159,
-                 ids_only=True,
-                 print_items=True))
+    >>> for id in sampler(['A-1', 'A-2', 'A-3',
+                           'B-1', 'B-2', 'B-3'],
+                          seed=314159,
+                          ids_only=True):
+            print(id)
+    """)
+    for id in sampler(['A-1', 'A-2', 'A-3',
+                       'B-1', 'B-2', 'B-3'],
+                      seed=314159,
+                      ids_only=True):
+        print(id)
+
 
     print("\n    Example X2: Taking sample of size 3 (prefix of shuffled list).")
     print("""
-    >>> list(sampler(['A-1', 'A-2', 'A-3',
-                      'B-1', 'B-2', 'B-3'],
-                     seed=314159,
-                     ids_only=True,
-                     take=3,
-                     print_items=True))""")
-    list(sampler(['A-1', 'A-2', 'A-3',
-                  'B-1', 'B-2', 'B-3'],
-                 seed=314159,
-                 ids_only=True,
-                 take=3,
-                 print_items=True))
+    >>> for id in sampler(['A-1', 'A-2', 'A-3',
+                           'B-1', 'B-2', 'B-3'],
+                          seed=314159,
+                          ids_only=True,
+                          take=3):
+            print(id)
+    """)
+    for id in sampler(['A-1', 'A-2', 'A-3',
+                       'B-1', 'B-2', 'B-3'],
+                      seed=314159,
+                      ids_only=True,
+                      take=3):
+        print(id)
 
     print("\n    Example X3: Demonstrating consistency: shuffling the B items only.")
     print("""
-    >>> list(sampler(['B-1', 'B-2', 'B-3'],
-                     seed=314159,
-                     ids_only=True,
-                     print_items=True))""")
-    list(sampler(['B-1', 'B-2', 'B-3'],
-                 seed=314159,
-                 ids_only=True,
-                 print_items=True))
+    >>> for id in sampler(['B-1', 'B-2', 'B-3'],
+                          seed=314159,
+                          ids_only=True):
+            print(id)
+    """)
+    for id in sampler(['B-1', 'B-2', 'B-3'],
+                      seed=314159,
+                      ids_only=True):
+        print(id)
 
     print("\n    Example X4: Same as example X1, but showing tickets in sorted order.")
     print("    Each ticket has: ticket_number, id, and generation.")
     print("""
-    >>> list(sampler(['A-1', 'A-2', 'A-3',
-                      'B-1', 'B-2', 'B-3'],
-                     seed=314159,
-                     print_items=True))""")
-    list(sampler(['A-1', 'A-2', 'A-3',
-                  'B-1', 'B-2', 'B-3'],
-                 seed=314159,
-                 print_items=True))
+    >>> for tkt in sampler(['A-1', 'A-2', 'A-3',
+                           'B-1', 'B-2', 'B-3'],
+                           seed=314159):
+            print(tkt)
+    """)
+    for tkt in sampler(['A-1', 'A-2', 'A-3',
+                        'B-1', 'B-2', 'B-3'],
+                      seed=314159):
+        print(tkt)
 
     print("\n    Example X5: Same as example X2, but showing tickets in sorted order.")
     print("""
-    >>> list(sampler(['B-1', 'B-2', 'B-3'],
-                     seed=314159,
-                     print_items=True))""")
-    list(sampler(['B-1', 'B-2', 'B-3'],
-                 seed=314159,
-                 print_items=True))
+    >>> for tkt in sampler(['B-1', 'B-2', 'B-3'],
+                           seed=314159):
+            print(tkt)
+    """)
+    for tkt in sampler(['B-1', 'B-2', 'B-3'],
+                       seed=314159):
+        print(tkt)
 
     print("\n    Example X6: Drawing sample of size 16 with replacement from set of size 6.")
     print("""
-    >>> list(sampler(['A-1', 'A-2', 'A-3',
-                      'B-1', 'B-2', 'B-3'],
-                     seed=314159,
-                     with_replacement=True,
-                     take=16,
-                     print_items=True))""")
-    list(sampler(['A-1', 'A-2', 'A-3',
-                  'B-1', 'B-2', 'B-3'],
-                 seed=314159,
-                 with_replacement=True,
-                 take=16,
-                 print_items=True))
+    >>> for id in sampler(['A-1', 'A-2', 'A-3',
+                           'B-1', 'B-2', 'B-3'],
+                          seed=314159,
+                          with_replacement=True,
+                          take=16):
+            print(id)
+    """)
+    for id in sampler(['A-1', 'A-2', 'A-3',
+                       'B-1', 'B-2', 'B-3'],
+                      seed=314159,
+                      with_replacement=True,
+                      take=16):
+        print(id)
+
 
     print("\n    Example X7: Drawing sample of size 16 with replacement from set of size 3.")
     print("    Note consistency with example X6.")
     print("""
-    >>> list(sampler(['B-1', 'B-2', 'B-3'],
-                     seed=314159,
-                     with_replacement=True,
-                     take=16,
-                     print_items=True))""")
-    list(sampler(['B-1', 'B-2', 'B-3'],
-                 seed=314159,
-                 with_replacement=True,
-                 take=16,
-                 print_items=True))
+    >>> for tkt in sampler(['B-1', 'B-2', 'B-3'],
+                           seed=314159,
+                           with_replacement=True,
+                           take=16):
+            print(tkt)
+    """)
+    for tkt in sampler(['B-1', 'B-2', 'B-3'],
+                       seed=314159,
+                       with_replacement=True,
+                       take=16):
+        print(tkt)
 
     print("\n    Example X8: Drawing sample of size 16 with replacement from set of size 1.")
     print("    Note consistency with examplex X6 and X7.")
     print("""
-    >>> list(sampler(['B-1'],
-                     seed=314159,
-                     with_replacement=True,
-                     take=16,
-                     print_items=True))""")
-    list(sampler(['B-1'],
-                 seed=314159,
-                 with_replacement=True,
-                 take=16,
-                 print_items=True))
+    >>> for tkt in sampler(['B-1'],
+                           seed=314159,
+                           with_replacement=True,
+                           take=16):
+            print(tkt)
+    """)
+    for tkt in sampler(['B-1'],
+                       seed=314159,
+                       with_replacement=True,
+                       take=16):
+        print(tkt)
 
 
 def test_fraction():

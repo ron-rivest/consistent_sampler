@@ -493,8 +493,7 @@ def sampler(id_list,
             with_replacement=False,
             ids_only=False,
             drop=0,
-            take=float('inf'),
-            print_items=False):
+            take=float('inf')):
     """Return generator for a sample of the given list of ids.
 
     The sample is determined in a pseudo-random order controlled by
@@ -517,11 +516,6 @@ def sampler(id_list,
             elements of the output sequence to take, after the drops.
             If drop is 0, then take is an upper bound on the sample size.
             (defaults to infinity)
-        print_items (bool): if True, also print each item as it is selected
-            (these are ids if ids_only is True, otherwise they are tickets)
-            This has no effect unless the call to sampler is actually used,
-            as in list(sampler(...))
-            (defaults to False)
 
     Outputs:
         a generator for the sample.
@@ -577,12 +571,8 @@ def sampler(id_list,
         count += 1
         if drop < count <= drop + take:
             if ids_only:
-                if print_items:
-                    print("   ", ticket.id)
                 yield ticket.id
             else:
-                if print_items:
-                    print("   ", tktstr(ticket))
                 yield ticket
         elif count > drop+take:
             return
