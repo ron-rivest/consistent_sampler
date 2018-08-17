@@ -491,9 +491,11 @@ def draw_with_replacement(heap):
 def sampler(id_list,
             seed,
             with_replacement=False,
-            ids_only=False,
             drop=0,
-            take=float('inf')):
+            take=float('inf'),
+            output='tuple',
+            digits=9,
+            ):
     """Return generator for a sample of the given list of ids.
 
     The sample is determined in a pseudo-random order controlled by
@@ -507,15 +509,27 @@ def sampler(id_list,
         seed (object): a python object with a string representation
         with_replacement (bool): True if and only if sampling is with
             replacement (defaults to False)
-        ids_only (bool): True if each output element is an id from id_list;
-            False if each output element is a ticket.
-            (defaults to False)
         drop (int): an integer saying how many of the output sequence to drop
             (defaults to 0)
         take (int): an integer giving an upper bound on the number of
             elements of the output sequence to take, after the drops.
             If drop is 0, then take is an upper bound on the sample size.
             (defaults to infinity)
+        output (str): one of {'id', 'tuple', 'ticket'}
+            Specifies whether each invocation of the returned generator 
+            yields:
+                an id, such as
+                    'AB-130'
+                a tuple (triple), such as
+                    ('0.235789114', 'AB-130', 1)
+                or a Ticket, such as
+                    Ticket(ticket_number='0.235789114', 
+                           id='AB-130', 
+                           generation=1)
+        digits (int): the number of significant digits to return
+            in ticket numbers. (More precisely, this is the number of
+            significant digits to give after the initial segment
+            of 9s.)
 
     Outputs:
         a generator for the sample.
@@ -544,16 +558,17 @@ def sampler(id_list,
         Raises AssertionError if there are duplicate ids in id_list
 
     Examples:
-        >>> list(sampler(['A#2', 'B#7', 'C#1', 'D#4'], ids_only=True,
-        ... with_replacement=True, take=8, seed=314159))
+        >>> list(sampler(['A#2', 'B#7', 'C#1', 'D#4'], 
+        ...              with_replacement=True, take=8, seed=314159,
+        ...              output='id'))
         ['D#4', 'C#1', 'C#1', 'B#7', 'A#2', 'C#1', 'D#4', 'B#7']
 
         >>> for t in sampler(['ab-1', 'ab-2', 'cd-1', 'ef-3'], seed=314159):
-        ...     print(tktstr(t))
-        Ticket(ticket_number='0.317685817477', id='cd-1', generation=1)
-        Ticket(ticket_number='0.832984519533', id='ef-3', generation=1)
-        Ticket(ticket_number='0.9098039269523', id='ab-1', generation=1)
-        Ticket(ticket_number='0.9231549043811', id='ab-2', generation=1)
+        ...     print(t)
+        ('0.317685817', 'cd-1', 1)
+        ('0.832984519', 'ef-3', 1)
+        ('0.9098039269', 'ab-1', 1)
+        ('0.9231549043', 'ab-2', 1)
 
         For additional examples see test_consistent_sampler.py
     """
@@ -561,7 +576,11 @@ def sampler(id_list,
     assert len(id_list) == len(set(id_list)),\
         "Input id_list to sampler contains duplicate ids: {}"\
         .format(duplicates(id_list))
-
+    assert type(with_replacement) is bool
+    output = output.lower()
+    assert output in {'id', 'tuple', 'ticket'}
+    assert type(digits) is int
+    
     heap = make_ticket_heap(id_list, seed)
     count = 0
     while len(heap) > 0:
@@ -570,12 +589,17 @@ def sampler(id_list,
             heapq.heappush(heap, next_ticket(ticket))
         count += 1
         if drop < count <= drop + take:
-            if ids_only:
+            ticket_list = list(ticket)
+            ticket_list[0] = trim(ticket_list[0], digits)
+            if output == 'id':
                 yield ticket.id
+            elif output == 'tuple':
+                yield tuple(ticket_list)
             else:
-                yield ticket
+                yield Ticket(ticket_list)
         elif count > drop+take:
             return
+
 
 if __name__ == '__main__':
     import doctest

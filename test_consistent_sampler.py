@@ -3,140 +3,146 @@
 from consistent_sampler import *
 
 """
+test_sampler.
+
     Example X1: Shuffling a list of size six.
 
     >>> for id in sampler(['A-1', 'A-2', 'A-3',
-                            'B-1', 'B-2', 'B-3'],
-                           seed=314159,
-                           ids_only=True):
+                           'B-1', 'B-2', 'B-3'],
+                          seed=314159):
             print(id)
-
-    B-2
-    B-3
-    A-3
-    A-2
-    B-1
-    A-1
+    
+('0.410310858', 'B-2', 1)
+('0.470960291', 'B-3', 1)
+('0.471438751', 'A-3', 1)
+('0.567089805', 'A-2', 1)
+('0.9781715679', 'B-1', 1)
+('0.9828515724', 'A-1', 1)
 
     Example X2: Taking sample of size 3 (prefix of shuffled list).
 
-    >>> list(sampler(['A-1', 'A-2', 'A-3',
-                      'B-1', 'B-2', 'B-3'],
-                     seed=314159,
-                     ids_only=True,
-                     take=3,
-                     print_items=True))
-    B-2
-    B-3
-    A-3
+    >>> for id in sampler(['A-1', 'A-2', 'A-3',
+                           'B-1', 'B-2', 'B-3'],
+                          seed=314159,
+                          take=3):
+            print(id)
+    
+('0.410310858', 'B-2', 1)
+('0.470960291', 'B-3', 1)
+('0.471438751', 'A-3', 1)
 
     Example X3: Demonstrating consistency: shuffling the B items only.
 
-    >>> list(sampler(['B-1', 'B-2', 'B-3'],
-                     seed=314159,
-                     ids_only=True,
-                     print_items=True))
-    B-2
-    B-3
-    B-1
+    >>> for id in sampler(['B-1', 'B-2', 'B-3'],
+                          seed=314159):
+            print(id)
+    
+('0.410310858', 'B-2', 1)
+('0.470960291', 'B-3', 1)
+('0.9781715679', 'B-1', 1)
 
     Example X4: Same as example X1, but showing tickets in sorted order.
     Each ticket has: ticket_number, id, and generation.
 
-    >>> list(sampler(['A-1', 'A-2', 'A-3',
-                      'B-1', 'B-2', 'B-3'],
-                     seed=314159,
-                     print_items=True))
-    Ticket(ticket_number='0.410310858090', id='B-2', generation=1)
-    Ticket(ticket_number='0.470960291255', id='B-3', generation=1)
-    Ticket(ticket_number='0.471438751218', id='A-3', generation=1)
-    Ticket(ticket_number='0.567089805977', id='A-2', generation=1)
-    Ticket(ticket_number='0.9781715679015', id='B-1', generation=1)
-    Ticket(ticket_number='0.9828515724237', id='A-1', generation=1)
+    >>> for tkt in sampler(['A-1', 'A-2', 'A-3',
+                           'B-1', 'B-2', 'B-3'],
+                           seed=314159):
+            print(tkt)
+    
+('0.410310858', 'B-2', 1)
+('0.470960291', 'B-3', 1)
+('0.471438751', 'A-3', 1)
+('0.567089805', 'A-2', 1)
+('0.9781715679', 'B-1', 1)
+('0.9828515724', 'A-1', 1)
 
     Example X5: Same as example X2, but showing tickets in sorted order.
 
-    >>> list(sampler(['B-1', 'B-2', 'B-3'],
-                     seed=314159,
-                     print_items=True))
-    Ticket(ticket_number='0.410310858090', id='B-2', generation=1)
-    Ticket(ticket_number='0.470960291255', id='B-3', generation=1)
-    Ticket(ticket_number='0.9781715679015', id='B-1', generation=1)
+    >>> for tkt in sampler(['B-1', 'B-2', 'B-3'],
+                           seed=314159):
+            print(tkt)
+    
+('0.410310858', 'B-2', 1)
+('0.470960291', 'B-3', 1)
+('0.9781715679', 'B-1', 1)
 
     Example X6: Drawing sample of size 16 with replacement from set of size 6.
 
-    >>> list(sampler(['A-1', 'A-2', 'A-3',
-                      'B-1', 'B-2', 'B-3'],
-                     seed=314159,
-                     with_replacement=True,
-                     take=16,
-                     print_items=True))
-    Ticket(ticket_number='0.410310858090', id='B-2', generation=1)
-    Ticket(ticket_number='0.470960291255', id='B-3', generation=1)
-    Ticket(ticket_number='0.471438751218', id='A-3', generation=1)
-    Ticket(ticket_number='0.567089805977', id='A-2', generation=1)
-    Ticket(ticket_number='0.659534619443', id='A-2', generation=2)
-    Ticket(ticket_number='0.765106651657', id='A-2', generation=3)
-    Ticket(ticket_number='0.796265241255', id='B-3', generation=2)
-    Ticket(ticket_number='0.872112726718', id='A-2', generation=4)
-    Ticket(ticket_number='0.893337722107', id='B-2', generation=2)
-    Ticket(ticket_number='0.9026656781853', id='A-3', generation=2)
-    Ticket(ticket_number='0.9105083805303', id='A-3', generation=3)
-    Ticket(ticket_number='0.9200375234735', id='B-2', generation=3)
-    Ticket(ticket_number='0.9257009021378', id='B-3', generation=3)
-    Ticket(ticket_number='0.9357740622701', id='A-3', generation=4)
-    Ticket(ticket_number='0.9425889093517', id='B-3', generation=4)
-    Ticket(ticket_number='0.9501908345456', id='B-2', generation=4)
+    >>> for id in sampler(['A-1', 'A-2', 'A-3',
+                           'B-1', 'B-2', 'B-3'],
+                          seed=314159,
+                          with_replacement=True,
+                          take=16):
+            print(id)
+    
+('0.410310858', 'B-2', 1)
+('0.470960291', 'B-3', 1)
+('0.471438751', 'A-3', 1)
+('0.567089805', 'A-2', 1)
+('0.659534619', 'A-2', 2)
+('0.765106651', 'A-2', 3)
+('0.796265241', 'B-3', 2)
+('0.872112726', 'A-2', 4)
+('0.893337722', 'B-2', 2)
+('0.9026656781', 'A-3', 2)
+('0.9105083805', 'A-3', 3)
+('0.9200375234', 'B-2', 3)
+('0.9257009021', 'B-3', 3)
+('0.9357740622', 'A-3', 4)
+('0.9425889093', 'B-3', 4)
+('0.9501908345', 'B-2', 4)
 
     Example X7: Drawing sample of size 16 with replacement from set of size 3.
     Note consistency with example X6.
 
-    >>> list(sampler(['B-1', 'B-2', 'B-3'],
-                     seed=314159,
-                     with_replacement=True,
-                     take=16,
-                     print_items=True))
-    Ticket(ticket_number='0.410310858090', id='B-2', generation=1)
-    Ticket(ticket_number='0.470960291255', id='B-3', generation=1)
-    Ticket(ticket_number='0.796265241255', id='B-3', generation=2)
-    Ticket(ticket_number='0.893337722107', id='B-2', generation=2)
-    Ticket(ticket_number='0.9200375234735', id='B-2', generation=3)
-    Ticket(ticket_number='0.9257009021378', id='B-3', generation=3)
-    Ticket(ticket_number='0.9425889093517', id='B-3', generation=4)
-    Ticket(ticket_number='0.9501908345456', id='B-2', generation=4)
-    Ticket(ticket_number='0.9760011390576', id='B-3', generation=5)
-    Ticket(ticket_number='0.9781715679015', id='B-1', generation=1)
-    Ticket(ticket_number='0.99090101907691', id='B-2', generation=5)
-    Ticket(ticket_number='0.99307478253999', id='B-2', generation=6)
-    Ticket(ticket_number='0.99467877733761', id='B-3', generation=6)
-    Ticket(ticket_number='0.99558676418163', id='B-2', generation=7)
-    Ticket(ticket_number='0.99678142987041', id='B-3', generation=7)
-    Ticket(ticket_number='0.99737514805042', id='B-2', generation=8)
+    >>> for tkt in sampler(['B-1', 'B-2', 'B-3'],
+                           seed=314159,
+                           with_replacement=True,
+                           take=16):
+            print(tkt)
+    
+('0.410310858', 'B-2', 1)
+('0.470960291', 'B-3', 1)
+('0.796265241', 'B-3', 2)
+('0.893337722', 'B-2', 2)
+('0.9200375234', 'B-2', 3)
+('0.9257009021', 'B-3', 3)
+('0.9425889093', 'B-3', 4)
+('0.9501908345', 'B-2', 4)
+('0.9760011390', 'B-3', 5)
+('0.9781715679', 'B-1', 1)
+('0.99090101907', 'B-2', 5)
+('0.99307478253', 'B-2', 6)
+('0.99467877733', 'B-3', 6)
+('0.99558676418', 'B-2', 7)
+('0.99678142987', 'B-3', 7)
+('0.99737514805', 'B-2', 8)
 
     Example X8: Drawing sample of size 16 with replacement from set of size 1.
     Note consistency with examplex X6 and X7.
 
-    >>> list(sampler(['B-1'],
-                     seed=314159,
-                     with_replacement=True,
-                     take=16,
-                     print_items=True))
-    Ticket(ticket_number='0.9781715679015', id='B-1', generation=1)
-    Ticket(ticket_number='0.99820529419851', id='B-1', generation=2)
-    Ticket(ticket_number='0.999816322794165', id='B-1', generation=3)
-    Ticket(ticket_number='0.9999155113816043', id='B-1', generation=4)
-    Ticket(ticket_number='0.9999740105535687', id='B-1', generation=5)
-    Ticket(ticket_number='0.9999889761394924', id='B-1', generation=6)
-    Ticket(ticket_number='0.9999894745680419', id='B-1', generation=7)
-    Ticket(ticket_number='0.99999518448838761', id='B-1', generation=8)
-    Ticket(ticket_number='0.99999770648841628', id='B-1', generation=9)
-    Ticket(ticket_number='0.999999324301596427', id='B-1', generation=10)
-    Ticket(ticket_number='0.999999588760690097', id='B-1', generation=11)
-    Ticket(ticket_number='0.999999659277522509', id='B-1', generation=12)
-    Ticket(ticket_number='0.999999835543910018', id='B-1', generation=13)
-    Ticket(ticket_number='0.99999999723005422153', id='B-1', generation=14)
-    Ticket(ticket_number='0.99999999859359985917', id='B-1', generation=15)
-    Ticket(ticket_number='0.999999999540636137034', id='B-1', generation=16)
+    >>> for tkt in sampler(['B-1'],
+                           seed=314159,
+                           with_replacement=True,
+                           take=16):
+            print(tkt)
+    
+('0.9781715679', 'B-1', 1)
+('0.99820529419', 'B-1', 2)
+('0.999816322794', 'B-1', 3)
+('0.9999155113816', 'B-1', 4)
+('0.9999740105535', 'B-1', 5)
+('0.9999889761394', 'B-1', 6)
+('0.9999894745680', 'B-1', 7)
+('0.99999518448838', 'B-1', 8)
+('0.99999770648841', 'B-1', 9)
+('0.999999324301596', 'B-1', 10)
+('0.999999588760690', 'B-1', 11)
+('0.999999659277522', 'B-1', 12)
+('0.999999835543910', 'B-1', 13)
+('0.99999999723005422', 'B-1', 14)
+('0.99999999859359985', 'B-1', 15)
+('0.999999999540636137', 'B-1', 16)
 """
 
 def test_sampler():
@@ -147,14 +153,12 @@ def test_sampler():
     print("""
     >>> for id in sampler(['A-1', 'A-2', 'A-3',
                            'B-1', 'B-2', 'B-3'],
-                          seed=314159,
-                          ids_only=True):
+                          seed=314159):
             print(id)
     """)
     for id in sampler(['A-1', 'A-2', 'A-3',
                        'B-1', 'B-2', 'B-3'],
-                      seed=314159,
-                      ids_only=True):
+                      seed=314159):
         print(id)
 
 
@@ -163,27 +167,23 @@ def test_sampler():
     >>> for id in sampler(['A-1', 'A-2', 'A-3',
                            'B-1', 'B-2', 'B-3'],
                           seed=314159,
-                          ids_only=True,
                           take=3):
             print(id)
     """)
     for id in sampler(['A-1', 'A-2', 'A-3',
                        'B-1', 'B-2', 'B-3'],
                       seed=314159,
-                      ids_only=True,
                       take=3):
         print(id)
 
     print("\n    Example X3: Demonstrating consistency: shuffling the B items only.")
     print("""
     >>> for id in sampler(['B-1', 'B-2', 'B-3'],
-                          seed=314159,
-                          ids_only=True):
+                          seed=314159):
             print(id)
     """)
     for id in sampler(['B-1', 'B-2', 'B-3'],
-                      seed=314159,
-                      ids_only=True):
+                      seed=314159):
         print(id)
 
     print("\n    Example X4: Same as example X1, but showing tickets in sorted order.")
