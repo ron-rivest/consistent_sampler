@@ -214,6 +214,31 @@ def tktstr(ticket, mantissa_display_length=12):
     return Ticket(tktno, ticket.id, ticket.generation)
 
 
+def duplicates(L):
+    """
+    Return a list of the duplicates occurring in a given list L.
+
+    Args:
+        L (list): an input list
+
+    Returns:
+        a sorted list (possibly empty) of the elements appearing
+        more than once in input list L.
+
+    Examples:
+        >>> duplicates([1, 2, 1, 3, 1, 4, 2, 5])
+        [1, 2]
+    """
+
+    dupes = set()
+    seen = set()
+    for x in L:
+        if x in seen:
+            dupes.add(x)
+        seen.add(x)
+    return sorted(list(dupes))
+
+
 def sha256_hex(hash_input):
     """ Return 64-character hex representation of SHA256 of input.
 
@@ -370,7 +395,7 @@ def make_ticket_heap(id_list, seed):
             By the heap property, the ticket_number at position i will be
             less than or equal to the ticket_numbers at positions 2i+1
             and 2i+2.
-    
+
     Example:
     >>> heap = make_ticket_heap(['dog', 'cat', 'fish', 'goat'], 'xy()134!g2n')
     >>> for ticket in heap:
@@ -445,14 +470,14 @@ def draw_with_replacement(heap):
         >>> heapq.heappush(heap, y)
         >>> heapq.heappush(heap, z)
         >>> for ticket in heap:
-        ...    print(ticket) 
+        ...    print(ticket)
         Ticket(ticket_number='0.234', id='x', generation=2)
         Ticket(ticket_number='0.354', id='y', generation=1)
         Ticket(ticket_number='0.666', id='z', generation=2)
         >>> draw_with_replacement(heap)
         Ticket(ticket_number='0.234', id='x', generation=2)
         >>> for ticket in heap:
-        ...    print(ticket) 
+        ...    print(ticket)
         Ticket(ticket_number='0.354', id='y', generation=1)
         Ticket(ticket_number='0.666', id='z', generation=2)
         Ticket(ticket_number='0.547830802749402616364646686795722512609112766306951592422621788875312684400211', id='x', generation=3)
@@ -478,7 +503,7 @@ def sampler(id_list,
     Args:
         id_list (iterable): a list or iterable for a finite collection
             of ids.  Each id is typically a string, but may be a tuple
-            or other printable object.  It is checked that these ids 
+            or other printable object.  It is checked that these ids
             are distinct.
         seed (object): a python object with a string representation
         with_replacement (bool): True if and only if sampling is with
@@ -489,7 +514,7 @@ def sampler(id_list,
         drop (int): an integer saying how many of the output sequence to drop
             (defaults to 0)
         take (int): an integer giving an upper bound on the number of
-            elements of the output sequence to take, after the drops. 
+            elements of the output sequence to take, after the drops.
             If drop is 0, then take is an upper bound on the sample size.
             (defaults to infinity)
         print_items (bool): if True, also print each item as it is selected
@@ -540,9 +565,10 @@ def sampler(id_list,
     """
 
     assert len(id_list) == len(set(id_list)),\
-        "Input to sampler contains duplicate ids!"
-    # check that there are no duplicate ids in id_list
-    
+        "Input id_list to sampler contains duplicate ids: {}"\
+        .format(duplicates(id_list))
+    # report if there are duplicate ids in id_list
+
     heap = make_ticket_heap(id_list, seed)
     count = 0
     while len(heap) > 0:
@@ -565,4 +591,3 @@ def sampler(id_list,
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
-    
