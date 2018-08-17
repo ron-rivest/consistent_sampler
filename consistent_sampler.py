@@ -596,7 +596,9 @@ def sampler(id_list,
             elif output == 'tuple':
                 yield tuple(ticket_list)
             else:
-                yield Ticket(ticket_list)
+                yield Ticket(ticket_number=ticket_list[0],
+                             id=ticket_list[1],
+                             generation=ticket_list[2])
         elif count > drop+take:
             return
 
