@@ -9,37 +9,40 @@ test_sampler.
 
     >>> for id in sampler(['A-1', 'A-2', 'A-3',
                            'B-1', 'B-2', 'B-3'],
-                          seed=314159):
+                          seed=314159,
+                          output='id'):
             print(id)
     
-('0.410310858', 'B-2', 1)
-('0.470960291', 'B-3', 1)
-('0.471438751', 'A-3', 1)
-('0.567089805', 'A-2', 1)
-('0.9781715679', 'B-1', 1)
-('0.9828515724', 'A-1', 1)
+B-2
+B-3
+A-3
+A-2
+B-1
+A-1
 
     Example X2: Taking sample of size 3 (prefix of shuffled list).
 
     >>> for id in sampler(['A-1', 'A-2', 'A-3',
                            'B-1', 'B-2', 'B-3'],
                           seed=314159,
+                          output='id',
                           take=3):
             print(id)
     
-('0.410310858', 'B-2', 1)
-('0.470960291', 'B-3', 1)
-('0.471438751', 'A-3', 1)
+B-2
+B-3
+A-3
 
     Example X3: Demonstrating consistency: shuffling the B items only.
 
     >>> for id in sampler(['B-1', 'B-2', 'B-3'],
-                          seed=314159):
+                          seed=314159,
+                          output='id'):
             print(id)
     
-('0.410310858', 'B-2', 1)
-('0.470960291', 'B-3', 1)
-('0.9781715679', 'B-1', 1)
+B-2
+B-3
+B-1
 
     Example X4: Same as example X1, but showing tickets in sorted order.
     Each ticket has: ticket_number, id, and generation.
@@ -153,12 +156,14 @@ def test_sampler():
     print("""
     >>> for id in sampler(['A-1', 'A-2', 'A-3',
                            'B-1', 'B-2', 'B-3'],
-                          seed=314159):
+                          seed=314159,
+                          output='id'):
             print(id)
     """)
     for id in sampler(['A-1', 'A-2', 'A-3',
                        'B-1', 'B-2', 'B-3'],
-                      seed=314159):
+                      seed=314159,
+                      output='id'):
         print(id)
 
 
@@ -167,23 +172,27 @@ def test_sampler():
     >>> for id in sampler(['A-1', 'A-2', 'A-3',
                            'B-1', 'B-2', 'B-3'],
                           seed=314159,
+                          output='id',
                           take=3):
             print(id)
     """)
     for id in sampler(['A-1', 'A-2', 'A-3',
                        'B-1', 'B-2', 'B-3'],
                       seed=314159,
+                      output='id',
                       take=3):
         print(id)
 
     print("\n    Example X3: Demonstrating consistency: shuffling the B items only.")
     print("""
     >>> for id in sampler(['B-1', 'B-2', 'B-3'],
-                          seed=314159):
+                          seed=314159,
+                          output='id'):
             print(id)
     """)
     for id in sampler(['B-1', 'B-2', 'B-3'],
-                      seed=314159):
+                      seed=314159,
+                      output='id'):
         print(id)
 
     print("\n    Example X4: Same as example X1, but showing tickets in sorted order.")
