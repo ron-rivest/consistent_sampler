@@ -29,15 +29,15 @@ generator, capable of producing an infinitely long stream of output object ids.
 As a small example of sampling without replacement:
 
     g = sampler(['A-1', 'A-2', 'A-3', 'B-1', 'B-2', 'B-3'], 
-                with_replacement=False, take=4, seed=314159)
+                with_replacement=False, take=4, seed=314159, output='id')
   
 yields a generator g whose output can be printed:
 
-    print(list(ticket.id for ticket in g))
+    print(list(id for id in g))
    
 which produces:
 
-    ['B-2', 'B-1', 'A-3', 'B-3']
+    ['B-2', 'B-3', 'A-3', 'A-2']
     
 Consistent sampling is not a new idea, see for example
 https://arxiv.org/abs/1612.01041
