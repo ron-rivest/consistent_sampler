@@ -192,28 +192,6 @@ def trim(x, mantissa_display_length=12):
     return x[:first_non_9_position + mantissa_display_length]
 
 
-def tktstr(ticket, mantissa_display_length=12):
-    """Return short printable form of a ticket.
-
-    Args:
-        ticket (Ticket): the ticket to be represented.
-        mantissa_display_length (int): Precision desired.
-            Defaults to 12.
-
-    Returns:
-        a Ticket which is ame as input ticket, except that
-            that the ticket_number has been trimmed to show
-            at ost mantissa_display_length digits after the 9s.
-
-    Example:
-        >>> tktstr(Ticket('0.9991234567890', 'AB-130', 1), 4)
-        Ticket(ticket_number='0.9991234', id='AB-130', generation=1)
-    """
-
-    tktno = trim(ticket.ticket_number, mantissa_display_length)
-    return Ticket(tktno, ticket.id, ticket.generation)
-
-
 def duplicates(L):
     """
     Return a list of the duplicates occurring in a given list L.
