@@ -68,12 +68,12 @@ test_sampler.
 
     Example X6: Drawing sample of size 16 with replacement from set of size 6.
 
-    >>> for id in sampler(['A-1', 'A-2', 'A-3',
-                           'B-1', 'B-2', 'B-3'],
-                          seed=314159,
-                          with_replacement=True,
-                          take=16):
-            print(id)
+    >>> for tkt in sampler(['A-1', 'A-2', 'A-3',
+                            'B-1', 'B-2', 'B-3'],
+                           seed=314159,
+                           with_replacement=True,
+                           take=16):
+            print(tkt)
     
 ('0.410310858', 'B-2', 1)
 ('0.470960291', 'B-3', 1)
@@ -211,19 +211,19 @@ def test_sampler():
 
     print("\n    Example X6: Drawing sample of size 16 with replacement from set of size 6.")
     print("""
-    >>> for id in sampler(['A-1', 'A-2', 'A-3',
-                           'B-1', 'B-2', 'B-3'],
-                          seed=314159,
-                          with_replacement=True,
-                          take=16):
-            print(id)
+    >>> for tkt in sampler(['A-1', 'A-2', 'A-3',
+                            'B-1', 'B-2', 'B-3'],
+                           seed=314159,
+                           with_replacement=True,
+                           take=16):
+            print(tkt)
     """)
-    for id in sampler(['A-1', 'A-2', 'A-3',
-                       'B-1', 'B-2', 'B-3'],
-                      seed=314159,
-                      with_replacement=True,
-                      take=16):
-        print(id)
+    for tkt in sampler(['A-1', 'A-2', 'A-3',
+                        'B-1', 'B-2', 'B-3'],
+                       seed=314159,
+                       with_replacement=True,
+                       take=16):
+        print(tkt)
 
 
     print("\n    Example X7: Drawing sample of size 16 with replacement from set of size 3.")
