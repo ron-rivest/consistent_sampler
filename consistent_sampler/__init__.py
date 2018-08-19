@@ -1,1 +1,1 @@
-name = 'consistentsamplerpkg'
+name = 'consistent_sampler'

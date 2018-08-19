@@ -4,8 +4,8 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="consistentsampler",
-    version="1.0.3",
+    name="consistent_sampler",
+    version="1.0.4",
     author="Ronald L. Rivest",
     author_email="rivest@mit.edu",
     description="Package for consistent sampling with or without replacement.",
