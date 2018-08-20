@@ -1,0 +1,6 @@
+AUTHORS for project https://github.com/ron-rivest/consistent_sampler
+in alphabetical order.
+
+
+Ronald L. Rivest <rivest@mit.edu>
+
