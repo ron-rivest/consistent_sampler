@@ -1,1 +1,0 @@
-name = 'consistent_sampler'
