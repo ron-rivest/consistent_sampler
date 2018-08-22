@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="consistent_sampler",
-    version="1.0.6",
+    version="1.0.7",
     author="Ronald L. Rivest",
     author_email="rivest@mit.edu",
     description="Package for consistent sampling with or without replacement.",
