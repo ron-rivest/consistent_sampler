@@ -56,3 +56,10 @@ for sampling and interpretation independently of what other counties are doing. 
 sample can be constructed from the individual county samples.
 
 Further documentation and examples are in the code.
+
+This code has been packaged and uploaded to PyPI.  From python3 you can say
+
+    from consistent_sampler import sampler
+    
+and then say ``help(sampler)`` for more documentation, or run sampler
+as in the above example.
