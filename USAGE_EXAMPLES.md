@@ -208,10 +208,16 @@ The precision with which ticket numbers are represented in the
 output can be controlled with the "``digits``" keyword argument
 to ``sampler``.  This argument specifies how many digits of
 precision will be given (after the leading prefix of nines
-after the decimal point, if any).  This does not affect the
-precision used internally, which is variable length and at least
-256 bits (77 digits).  Note that the compression is achieved by
-truncation, not rounding.
+after the decimal point, if any).  
+
+This does not affect the precision used internally, which is
+variable length and at least 256 bits (77 digits).
+Note that the compression is achieved by truncation, not rounding.
+
+If the output of ``sampler`` will be processed further, then
+it is advisable to use a large value of ``digits``, to ensure that
+no ticket-number collisions occur in the given output.  A value of
+``digits=78`` or larger will give the maximum possible precision.
 
 
     >>> L = ['a', 'b']
@@ -264,6 +270,8 @@ truncation, not rounding.
     ('0.9968', 'b', 9)
     ('0.9984', 'b', 10)
     ('0.9988', 'b', 11)
+
+
 
 
 
