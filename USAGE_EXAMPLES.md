@@ -213,6 +213,7 @@ after the decimal point, if any).
 This does not affect the precision used internally, which is
 variable length and at least 256 bits (77 digits).
 Note that the compression is achieved by truncation, not rounding.
+The default value of ``digits`` is 9.
 
 If the output of ``sampler`` will be processed further, then
 it is advisable to use a large value of ``digits``, to ensure that
@@ -271,6 +272,116 @@ no ticket-number collisions occur in the given output.  A value of
     ('0.9984', 'b', 10)
     ('0.9988', 'b', 11)
 
+
+# Example 8. Stratified sampling.
+
+We illustrate the use of consistent sampling for
+stratified sampling with the following simple example.
+
+Suppose we have stratum 1 of size 2000:
+
+    >>> LAB = ["AB-{}".format(i) for i in range(2000)]
+
+and stratum 2 of size 1000:
+
+    >>> LCD = ["CD-{}".format(i) for i in range(1000)]
+
+We choose a sample of about one percent of ids in each stratum
+
+    >>> SAB = [t for t in sampler(LAB, seed=314159) if t[0]<'0.01']
+    >>> SCD = [t for t in sampler(LCD, seed=314159) if t[0]<'0.01']
+
+We can print out the 24 ids in SAB:
+
+    >>> for t in SAB:
+    ...     print(t)
+    ... 
+    ('0.000599853', 'AB-135', 1)
+    ('0.000666808', 'AB-684', 1)
+    ('0.000752515', 'AB-1980', 1)
+    ('0.001523540', 'AB-687', 1)
+    ('0.001822502', 'AB-1382', 1)
+    ('0.002270684', 'AB-1207', 1)
+    ('0.003334947', 'AB-637', 1)
+    ('0.003569863', 'AB-1577', 1)
+    ('0.003696717', 'AB-1673', 1)
+    ('0.003834922', 'AB-293', 1)
+    ('0.004818481', 'AB-1258', 1)
+    ('0.005368012', 'AB-1324', 1)
+    ('0.005842206', 'AB-1883', 1)
+    ('0.005945369', 'AB-1103', 1)
+    ('0.006079778', 'AB-1791', 1)
+    ('0.006084001', 'AB-653', 1)
+    ('0.006089639', 'AB-1701', 1)
+    ('0.006601161', 'AB-538', 1)
+    ('0.006705166', 'AB-500', 1)
+    ('0.006729792', 'AB-1419', 1)
+    ('0.007001501', 'AB-556', 1)
+    ('0.007239694', 'AB-1326', 1)
+    ('0.008197404', 'AB-707', 1)
+    ('0.009561740', 'AB-895', 1)
+
+and the 9 ids in SCD:
+
+    >>> for t in SCD:
+    ...     print(t)
+    ... 
+    ('0.002318508', 'CD-871', 1)
+    ('0.003315890', 'CD-47', 1)
+    ('0.003423249', 'CD-446', 1)
+    ('0.003526316', 'CD-688', 1)
+    ('0.003685382', 'CD-954', 1)
+    ('0.004961286', 'CD-919', 1)
+    ('0.006520711', 'CD-485', 1)
+    ('0.006541153', 'CD-455', 1)
+    ('0.008570259', 'CD-272', 1)
+
+We note that (since the same seed is used for both
+strata), the elements chosen are the same as if both
+strata were combined into a single stratum:
+
+    >>> L = LAB + LCD
+    >>> S = [t for t in sampler(L, seed=314159) if t[0]<'0.01']
+    >>> for t in S:
+    ...     print(t)
+    ... 
+    ('0.000599853', 'AB-135', 1)
+    ('0.000666808', 'AB-684', 1)
+    ('0.000752515', 'AB-1980', 1)
+    ('0.001523540', 'AB-687', 1)
+    ('0.001822502', 'AB-1382', 1)
+    ('0.002270684', 'AB-1207', 1)
+    ('0.002318508', 'CD-871', 1)
+    ('0.003315890', 'CD-47', 1)
+    ('0.003334947', 'AB-637', 1)
+    ('0.003423249', 'CD-446', 1)
+    ('0.003526316', 'CD-688', 1)
+    ('0.003569863', 'AB-1577', 1)
+    ('0.003685382', 'CD-954', 1)
+    ('0.003696717', 'AB-1673', 1)
+    ('0.003834922', 'AB-293', 1)
+    ('0.004818481', 'AB-1258', 1)
+    ('0.004961286', 'CD-919', 1)
+    ('0.005368012', 'AB-1324', 1)
+    ('0.005842206', 'AB-1883', 1)
+    ('0.005945369', 'AB-1103', 1)
+    ('0.006079778', 'AB-1791', 1)
+    ('0.006084001', 'AB-653', 1)
+    ('0.006089639', 'AB-1701', 1)
+    ('0.006520711', 'CD-485', 1)
+    ('0.006541153', 'CD-455', 1)
+    ('0.006601161', 'AB-538', 1)
+    ('0.006705166', 'AB-500', 1)
+    ('0.006729792', 'AB-1419', 1)
+    ('0.007001501', 'AB-556', 1)
+    ('0.007239694', 'AB-1326', 1)
+    ('0.008197404', 'AB-707', 1)
+    ('0.008570259', 'CD-272', 1)
+    ('0.009561740', 'AB-895', 1)
+
+
+
+    
 
 
 
