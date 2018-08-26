@@ -28,54 +28,57 @@ increasing ticket number.  The ticket numbers are real numbers from
 the interval (0,1).
 
 (The ticket numbers were originally coded up as hexadecimal strings,
-but they are now represented as decimal strings for possible improved
-clarity.)
+but they are now represented as decimal strings for clarity.)
 
-If used for sampling with replacement, then once an object is picked
+When sampling with replacement, once an object is picked
 it is given a new but larger ticket number, and replaced in the
 collection of objects being sampled.
 
-The ticket number of an object is computed pseudo-randomly based on:
-    a random seed,
-    the "id" of the object, and
-    (if this is a replacement operation for sampling with replacement),
-    the previous ticket number of the ticket being replacement.
+The first ticket number of an object is computed pseudo-randomly based
+on: a random seed and the "id" of the object.  Subsequent ticket
+numbers for an object (which are only necessary if sampling with
+replacement) depend only on the previous ticket number.
 
 The random seed is an arbitrary string, used as an input to the
 pseudorandom ticket number generation routine.  The seed is the only
-source of randomness used in the sampling process.
+source of randomness used in the sampling process.  It might, for 
+example, be a 20-digit string obtained by rolling 20 decimal dice.
 
 The "id" of an object is its identifier or name.  We assume that each
-object has a unique id.  The id may be a string, a tuple of strings,
-or any printable object.
+object has a distinct id.  The id may be a string, a number,
+a tuple of strings, or any hashable python object.
 
-Ticket numbers are real numbers in the range (0, 1).
+Ticket numbers are real numbers in the range (0, 1).  These are
+represented as strings, to allow for variable precision, so a ticket
+number might be '0.2345' rather than 0.2345.
 
 The first ticket number given to an object is its "generation 1"
 ticket number.  If we are using sampling without replacement, then
-that number is the only ticket number it will receive.  If we are
+that number is the only ticket number it will ever receive.  If we are
 sampling with replacement, then the object may receive ticket numbers
-for generations 2, 3, ... as needed.  For a given object, its ticket
-numbers will increase with the generation number.
+for generations 2, 3, ... as needed.  For any particular object, its
+ticket numbers will increase with the generation number.
 
 Let TktNo(id, gen) denote the ticket number of the object with given
 id and generation, where id is an object id and gen a positive
 integer.  (The dependence upon the random seed is implicit here.)
 
-TktNo(id, gen) for gen=1 is a real number chosen uniformly in
-the interval (0, 1).
+TktNo(id, 1) is a pseudorandom real number chosen uniformly in
+the interval (0, 1) as a function of id and seed.
 
 TktNo(id, gen) for gen>1 is a real number chosen uniformly from
 the interval
+
         (TktNo(id, gen-1), 1).
-A ticket number for an object will be strictly larger than that
+
+Such a ticket number for an object will be strictly larger than the
 object's previous generation ticket number, but will still be
 strictly less than 1.
 
-One nice feature of this approach is that it is parallelizable.  That
-is, you can work with separate object collections independently, and
-merge the resulting sampling lists into order of increasing ticket
-number.
+One nice feature of this approach (consistent sampling) is that it is
+parallelizable.  That is, you can work with separate object
+collections independently, and merge the resulting sampling lists into
+a single master list in order of increasing ticket number.
 
 Another way of looking at this is the following.  We can view a
 collection of objects as represented by their tickets, all placed in
@@ -88,10 +91,13 @@ If we are sampling with replacement, then the ticket is returned to
 the basket with a new, larger, ticket number.
 
 Note that the sequence of increasing ticket numbers for a given object:
+
     TktNo(id, 1),  TktNo(id, 2), TktNo(id, 3), ...
+
 only depends on the object id (and the random seed).  It does not
-depend on any other object.  It can be precomputed if desired, once
-you know the id (although we don't do this).
+depend on any other object.  This sequence of ticket numbers for a
+given object can be precomputed if desired, once you know the id
+(although we don't do this).
 
 In our "basket" metaphor, when sampling with replacement, we can
 imagine the basket containing an infinite sequence of tickets for each
@@ -149,7 +155,7 @@ A Ticket is a record referring to one object.
 
 The "id" of the ticket is the id of the object (perhaps giving
 including its location).  The id is typically a string, but it could
-be a tuple or the like; it just needs to have a string representation.
+be a tuple or the like; it just needs to be hashable.
 
 The "ticket number" is the real number used for sampling objects;
 objects whose tickets have smaller ticket numbers are sampled earlier.
@@ -270,7 +276,7 @@ def first_fraction(id, seed):
     """ Return initial pseudo-random fraction for given id and seed.
 
     Args:
-        id (obj): a python object with a string representation
+        id (obj): a hashable python object with a string representation
         seed (obj): a python object with a string represetation
 
     Returns:
@@ -324,7 +330,7 @@ def first_ticket(id, seed):
     """Return initial (generation 1) ticket for the given id and seed.
 
     Args:
-        id (str): a python object with a string representation
+        id (str): a hashable python object with a string representation
         seed (str): a python object with a string representation
 
     Returns:
@@ -364,7 +370,8 @@ def make_ticket_heap(id_list, seed):
     """Make a heap containing one ticket for each id in id_list.
 
     Args:
-        id_list (iterable): a list or iterable with a list of distinct ids
+        id_list (iterable): a list or iterable with a list of distinct 
+            hashable ids
         seed (str): a string or any printable python object.
 
     Returns:
@@ -437,7 +444,7 @@ def draw_with_replacement(heap):
 
     Side-effects:
         the heap maintains its size, as the drawn ticket is replaced
-            by the next ticket for that id.
+            in the heap by the next ticket for that id.
 
     Example:
         >>> x = Ticket('0.234', 'x', 2)
@@ -482,7 +489,7 @@ def sampler(id_list,
     Args:
         id_list (iterable): a list or iterable for a finite collection
             of ids.  Each id is typically a string, but may be a tuple
-            or other printable object.  It is checked that these ids
+            or other hashable object.  It is checked that these ids
             are distinct.
         seed (object): a python object with a string representation
         with_replacement (bool): True if and only if sampling is with
