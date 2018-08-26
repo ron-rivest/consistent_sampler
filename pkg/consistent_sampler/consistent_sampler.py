@@ -555,7 +555,8 @@ def sampler(id_list,
         ('0.9098039269', 'ab-1', 1)
         ('0.9231549043', 'ab-2', 1)
 
-        For additional examples see test_consistent_sampler.py
+        For additional examples see demo_consistent_sampler.py
+        or USAGE_EXAMPLES.md
     """
 
     assert len(id_list) == len(set(id_list)),\

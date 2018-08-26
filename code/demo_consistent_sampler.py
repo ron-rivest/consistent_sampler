@@ -1,9 +1,9 @@
-"""Test routines for consistent_sampler.py"""
+"""Demo routines for consistent_sampler.py"""
 
 from consistent_sampler import *
 
 """
-test_sampler.
+demo_sampler.
 
     Example X1: Shuffling a list of size six.
 
@@ -148,10 +148,10 @@ B-1
 ('0.999999999540636137', 'B-1', 16)
 """
 
-def test_sampler():
+def demo_sampler():
     "Illustrates use of consistent_sampler.sampler"
 
-    print("test_sampler.")
+    print("demo_sampler.")
     print("\n    Example X1: Shuffling a list of size six.")
     print("""
     >>> for id in sampler(['A-1', 'A-2', 'A-3',
@@ -266,9 +266,9 @@ def test_sampler():
         print(tkt)
 
 
-def test_fraction():
+def demo_fraction():
 
-    print("test_fraction: First pseudorandom fraction.")
+    print("demo_fraction: First pseudorandom fraction.")
     print(">>> first_fraction('C-14', 314159)")
     x = first_fraction("C-14", 314159)
     print(x)
@@ -285,5 +285,5 @@ def test_fraction():
 
 
 if __name__ == '__main__':
-    test_fraction()
-    test_sampler()
+    demo_fraction()
+    demo_sampler()
