@@ -169,10 +169,10 @@ with each generation.
 """
 
 
-def trim(x, mantissa_display_length=12):
+def trim(x, mantissa_display_length=9):
     """Return trimmed form of real x (a string).
 
-    Gives only 12 significant digits after initial
+    Gives only 9 significant digits after initial
     sequence of 9s ends.
     Note that x is truncated, not rounded.
 
@@ -182,7 +182,7 @@ def trim(x, mantissa_display_length=12):
         mantissa_display_length (int): Precision desired.
             The output is trimmed to show at most this many
             significant digits after the initial segment of 9s.
-            Defaults to 12.
+            Defaults to 9.
 
     Returns:
         str: the trimmed string.
@@ -515,6 +515,7 @@ def sampler(id_list,
             in ticket numbers. (More precisely, this is the number of
             significant digits to give after the initial segment
             of 9s.)
+            (default is 9)
 
     Outputs:
         a generator for the sample.
