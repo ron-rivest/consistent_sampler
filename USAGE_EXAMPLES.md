@@ -40,12 +40,13 @@ SHA256 (a NIST standard for the U.S.).
     ['b', 'd', 'c', 'a']
 
 
-## Example 3. ids may be arbitrary hashable python objects.
+## Example 3. ids may be any hashable python objects.
 
 The ids given to ``sampler`` need not be strings; they may
-be arbitrary hashable python objects.  The routine ``sampler`` works
-with their printed representations (obtained via ``str()``).
-The ids given should have distinct string representations.
+be any hashable python objects (strings, numbers, tuples, etc).
+The routine ``sampler`` works
+with their printed representations (obtained via ``str()``);
+the ids given must have distinct string representations.
 Here we shuffle a list of four objects of mixed types.
 
     >>> L = [1, 'two', ("III", 3.0), (1,1,1,1)]
@@ -378,6 +379,8 @@ strata were combined into a single stratum:
     ('0.008197404', 'AB-707', 1)
     ('0.008570259', 'CD-272', 1)
     ('0.009561740', 'AB-895', 1)
+
+
 
 
 
