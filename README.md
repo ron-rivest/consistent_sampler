@@ -111,6 +111,8 @@ Further documentation and examples are:
     1. in the code `consistent_sampler.py`
     2. obtainable by running the program ``demo_consistent_sampler.py``
     3. described in the file USAGE_EXAMPLES.md
+    4. in the file ``docs/consistent_sampling_with_replacement.pdf``
+       (This file will soon appear on arXiv as well.)
 
 This code has been packaged and uploaded to PyPI.  From python3 you can say
 
