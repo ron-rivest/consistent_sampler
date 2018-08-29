@@ -1,42 +1,47 @@
 # consistent_sampler
-Routine ``sampler`` for providing 'consistent sampling' --- sampling that is
-consistent across subsets (as explained below).
 
-Here we call the elements to be sampled "ids", although they may be arbitrary
-python objects (strings, tuples, whatever).  We assume that ids are distinct.
+Routine ``sampler`` for providing 'consistent sampling' --- sampling
+that is consistent across subsets (as explained below).
+
+Here we call the elements to be sampled "ids", although they may be
+arbitrary python objects (strings, tuples, whatever).  We assume that
+ids are distinct.
 
 Consistent sampling works by associating a random "ticket number" with
-each id; the desired sample is found by taking the subset of the desired sample size
-containing those elements with the smallest associated random numbers.
+each id; the desired sample is found by taking the subset of the
+desired sample size containing those elements with the smallest
+associated random numbers.
 
-The random ticket numbers are computed using a given "seed"; this seed may be an
-arbitrary python object, typically a large integer or long string.
+The random ticket numbers are computed using a given "seed"; this seed
+may be an arbitrary python object, typically a large integer or long
+string.
 
-The sampling is *consistent* since it consistently favors elements with 
-small ticket numbers; if two sets S and T have substantial overlap, then 
-their samples of a given 
-size will also have substantial overlap (for the same random seed).
+The sampling is *consistent* since it consistently favors elements
+with small ticket numbers; if two sets S and T have substantial
+overlap, then their samples of a given size will also have substantial
+overlap (for the same random seed).
 
-This routine takes as input a finite collection of distinct object ids, a random seed, and
-some other parameters.  The sampling may be "with replacement" or "without replacement".
-One of the additional parameters to the routine is "take" -- the size of the desired
-sample.
+This routine takes as input a finite collection of distinct object
+ids, a random seed, and some other parameters.  The sampling may be
+"with replacement" or "without replacement".  One of the additional
+parameters to the routine is "take" -- the size of the desired sample.
 
-It provides as output a "sampling order" --- an ordered list of object ids that determine
-the sample.  Each object id as associated with a random value (its "ticket number") that
-depends on the id and the seed; ids are output in order of increasing ticket number. 
-For efficiency and portability, the
-ticket number is represented as a decimal fraction 0.dddd...dddd between 0 and 1.
+It provides as output a "sampling order" --- an ordered list of object
+ids that determine the sample.  Each object id as associated with a
+random value (its "ticket number") that depends on the id and the
+seed; ids are output in order of increasing ticket number.  For
+efficiency and portability, the ticket number is represented as a
+decimal fraction 0.dddd...dddd between 0 and 1.
 
-For sampling without replacement, the output can not be longer than the input, as no
-id may appear in the sample more than once.  
+For sampling without replacement, the output can not be longer than
+the input, as no id may appear in the sample more than once.
 
-For sampling with replacement, the output 
-may be infinite in length, as an id may appear in the sample an arbitrarily large 
-(even infinite) number of times.  
-When an id is sampled and then replaced
-in the set of ids being sampled, it is given a new random ticket number drawn uniformly
-from the set of numbers in (0, 1) larger than its previous ticket number.
+For sampling with replacement, the output may be infinite in length,
+as an id may appear in the sample an arbitrarily large (even infinite)
+number of times.  When an id is sampled and then replaced in the set
+of ids being sampled, it is given a new random ticket number drawn
+uniformly from the set of numbers in (0, 1) larger than its previous
+ticket number.
 
 The output of ``sampler`` is always a python 
 generator, capable of producing an infinitely long stream of ids.
@@ -93,18 +98,34 @@ and the references to consistent sampling therein.
 The routine here may (or may not) be novel in that it extends consistent
 sampling to sampling with replacement.
 
-For our applications, one big advantage of consistent sampling is the following.
-If each county collects cast ballots separately, then they can order their own ballots
-for sampling and interpretation independently of what other counties are doing.  An overall
-sample order can be constructed from the individual county sample order, by
-merging the list of triples each produces into an overall sorted order.
+For our applications, one big advantage of consistent sampling is the
+following.  If each county collects cast ballots separately, then they
+can order their own ballots for sampling and interpretation
+independently of what other counties are doing.  An overall sample
+order can be constructed from the individual county sample order, by
+merging the list of triples each produces into an overall sorted
+order.
 
 ## Usage
-Further documentation and examples are in the code.
+Further documentation and examples are:
+    1. in the code `consistent_sampler.py`
+    2. obtainable by running the program ``demo_consistent_sampler.py``
+    3. described in the file USAGE_EXAMPLES.md
+    4. in the file ``docs/consistent_sampling_with_replacement.pdf``
+       (This file will soon appear on arXiv as well.)
 
 This code has been packaged and uploaded to PyPI.  From python3 you can say
 
     from consistent_sampler import sampler
     
 and then say ``help(sampler)`` for more documentation, or run ``sampler``
-as in the above example.
+as in the above examples.
+
+## Efficiency
+
+The bulk of the work is in computing the SHA256 hash function, which
+takes about one microsecond per call on a typical laptop.  Thus, the
+running time of ``sampler`` is proportional to the length if
+``id_list`` (to set up the priority queue) plus, if sampling is done
+with replacement, the value of ``drop+take``, where the constant of
+proportionality is about 1 microsecond.  
