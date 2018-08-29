@@ -169,10 +169,10 @@ with each generation.
 """
 
 
-def trim(x, mantissa_display_length=12):
+def trim(x, mantissa_display_length=9):
     """Return trimmed form of real x (a string).
 
-    Gives only 12 significant digits after initial
+    Gives only 9 significant digits after initial
     sequence of 9s ends.
     Note that x is truncated, not rounded.
 
@@ -182,7 +182,7 @@ def trim(x, mantissa_display_length=12):
         mantissa_display_length (int): Precision desired.
             The output is trimmed to show at most this many
             significant digits after the initial segment of 9s.
-            Defaults to 12.
+            Defaults to 9.
 
     Returns:
         str: the trimmed string.
@@ -272,12 +272,15 @@ def sha256_uniform(hash_input):
     return "0." + "".join(x_list)
 
 
-def first_fraction(id, seed):
+def first_fraction(id, seed, seed_hash=None):
     """ Return initial pseudo-random fraction for given id and seed.
 
     Args:
         id (obj): a hashable python object with a string representation
         seed (obj): a python object with a string represetation
+        seed_hash (obj): if the caller has already hashed the seed
+            (for efficiency), then providing seed_hash saves the
+            need for recomputing it.
 
     Returns:
         A real number in (0,1) represented as '0.dddd...dddd'
@@ -289,7 +292,9 @@ def first_fraction(id, seed):
         '0.26299714122838008416507544297546663599715395525154425586041245287750224561854'
     """
 
-    return sha256_uniform(sha256_hex(seed) + str(id))
+    if seed_hash is None:
+        seed_hash = sha256_hex(seed)
+    return sha256_uniform(seed_hash + str(id))
 
 
 def next_fraction(x):
@@ -326,12 +331,14 @@ def next_fraction(x):
     return y
 
 
-def first_ticket(id, seed):
+def first_ticket(id, seed, seed_hash=None):
     """Return initial (generation 1) ticket for the given id and seed.
 
     Args:
         id (str): a hashable python object with a string representation
         seed (str): a python object with a string representation
+        seed_hash (str): the caller may for efficiency supply the
+            sha256_hex hash for seed, so it doesn't need to be recomputed
 
     Returns:
         a Ticket that is the first-generation ticket for the given
@@ -342,7 +349,7 @@ def first_ticket(id, seed):
         Ticket(ticket_number='0.26299714122838008416507544297546663599715395525154425586041245287750224561854', id='AB-130', generation=1)
     """
 
-    return Ticket(first_fraction(id, seed), id, 1)
+    return Ticket(first_fraction(id, seed, seed_hash), id, 1)
 
 
 def next_ticket(ticket):
@@ -392,8 +399,9 @@ def make_ticket_heap(id_list, seed):
     """
 
     heap = []
+    seed_hash = sha256_hex(seed)
     for id in id_list:
-        heapq.heappush(heap, first_ticket(id, seed))
+        heapq.heappush(heap, first_ticket(id, seed, seed_hash))
     return heap
 
 
@@ -515,6 +523,7 @@ def sampler(id_list,
             in ticket numbers. (More precisely, this is the number of
             significant digits to give after the initial segment
             of 9s.)
+            (default is 9)
 
     Outputs:
         a generator for the sample.
