@@ -127,7 +127,7 @@ as in the above examples.
 
 The bulk of the work is in computing the SHA256 hash function, which
 takes about one microsecond per call on a typical laptop.  Thus, the
-running time of ``sampler`` is proportional to the length if
+running time of ``sampler`` is proportional to the length of
 ``id_list`` (to set up the priority queue) plus, if sampling is done
 with replacement, the value of ``drop+take``, where the constant of
 proportionality is about 1 microsecond.  
